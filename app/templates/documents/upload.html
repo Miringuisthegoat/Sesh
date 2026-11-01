@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Upload{% endblock %}
+{% block content %}
+<h1 class="h3 mb-3">Upload a document</h1>
+<div class="row g-4">
+  <div class="col-lg-6">
+    <div class="card"><div class="card-body">
+      <form method="post" enctype="multipart/form-data" novalidate>
+        {{ form.hidden_tag() }}
+        <div class="mb-3">
+          <label class="form-label" for="file">Document</label>
+          <input class="form-control" type="file" id="file" name="file" required
+                 accept="{% for e in extensions %}.{{ e }}{{ ',' if not loop.last }}{% endfor %}">
+          <div class="form-text">Word (.docx), Excel (.xlsx) or image (.jpg, .jpeg, .png). Maximum {{ max_mb }} MB.</div>
+        </div>
+        <button class="btn btn-primary">Upload and convert to PDF</button>
+      </form>
+    </div></div>
+  </div>
+  <div class="col-lg-6">
+    <div class="card"><div class="card-body">
+      <h2 class="h6">Before you print</h2>
+      <p class="small mb-2">Conversion is done by Sesh, not by Microsoft Office, so layout can differ from what you see in Word or Excel. Always check the preview before printing.</p>
+      <ul class="small mb-0">
+        <li>Word: page breaks may move; text boxes, shapes, charts and columns are not reproduced.</li>
+        <li>Excel: formulas show their last saved result; charts and images are skipped; very wide sheets are shrunk to fit the page width.</li>
+        <li>Old .doc/.xls files and password-protected files are not supported.</li>
+      </ul>
+    </div></div>
+  </div>
+</div>
+{% endblock %}

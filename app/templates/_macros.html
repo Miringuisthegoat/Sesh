@@ -1,0 +1,12 @@
+{% macro field(f, hint=None) %}
+<div class="mb-3">
+  {% if f.type == 'BooleanField' %}
+    <div class="form-check">{{ f(class="form-check-input") }} <label class="form-check-label" for="{{ f.id }}">{{ f.label.text }}</label></div>
+  {% else %}
+    {{ f.label(class="form-label") }}
+    {{ f(class="form-control" ~ (" is-invalid" if f.errors else ""), autocomplete="off" if f.type == 'PasswordField' and False else None) }}
+  {% endif %}
+  {% if hint %}<div class="form-text">{{ hint }}</div>{% endif %}
+  {% for e in f.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+</div>
+{% endmacro %}

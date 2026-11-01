@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% from "_macros.html" import field %}
+{% block title %}Office{% endblock %}
+{% block content %}
+<h1 class="h3 mb-3">Office</h1>
+<div class="row g-4">
+  <div class="col-lg-6"><div class="card"><div class="card-body">
+    <h2 class="h5">{{ 'Office details' if office else 'Set up your office' }}</h2>
+    <form method="post" novalidate>
+      {{ form.hidden_tag() }}
+      {{ field(form.name) }}
+      {{ field(form.location) }}
+      <button class="btn btn-primary">{{ 'Save' if office else 'Create office' }}</button>
+    </form>
+  </div></div></div>
+  {% if office %}
+  <div class="col-lg-6">
+    <div class="card mb-3"><div class="card-body">
+      <h2 class="h5">Office agent</h2>
+      {% if agents %}
+        {% for a in agents %}<p class="mb-1">{{ a.name }} — {{ a.status.value }}{% if a.last_seen_at %}, last seen {{ a.last_seen_at.strftime('%Y-%m-%d %H:%M') }} UTC{% endif %}</p>{% endfor %}
+      {% else %}<p class="text-muted mb-0">No agent registered. Agent registration is not available yet in this version.</p>{% endif %}
+    </div></div>
+    <div class="card"><div class="card-body">
+      <h2 class="h5">Printer</h2>
+      {% if printers %}
+        {% for p in printers %}<p class="mb-1">{{ p.display_name or p.windows_name }} — availability: {{ p.availability.value }}</p>{% endfor %}
+      {% else %}<p class="text-muted mb-0">No printer registered. Printer setup is not available yet in this version.</p>{% endif %}
+    </div></div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

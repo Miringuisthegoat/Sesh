@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% from "_macros.html" import field %}
+{% block title %}Company settings{% endblock %}
+{% block content %}
+<h1 class="h3 mb-3">Company settings</h1>
+<div class="card" style="max-width:640px"><div class="card-body">
+  <form method="post" novalidate>
+    {{ form.hidden_tag() }}
+    {{ field(form.name) }}
+    {{ field(form.default_paper_size) }}
+    {{ field(form.max_copies, "Highest value this installation allows: " ~ ceiling ~ ".") }}
+    {{ field(form.retention_days, "Documents older than this will be eligible for deletion (retention cleanup arrives in a later version).") }}
+    {{ field(form.workers_can_view_all_documents, "Off by default: each worker sees only their own documents.") }}
+    <button class="btn btn-primary">Save settings</button>
+  </form>
+</div></div>
+{% endblock %}

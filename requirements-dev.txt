@@ -1,0 +1,2 @@
+-r requirements.txt
+moto[s3]==5.2.5  # only for the optional R2/S3 storage tests
