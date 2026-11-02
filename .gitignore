@@ -6,3 +6,5 @@ instance/
 storage/
 .pytest_cache/
 *.log
+dist/
+build/work/

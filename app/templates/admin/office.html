@@ -3,6 +3,12 @@
 {% block title %}Office{% endblock %}
 {% block content %}
 <h1 class="h3 mb-3">Office</h1>
+{% if new_token %}
+<div class="alert alert-warning">
+  <strong>Enrolment token (shown only once).</strong> Enter it in Sesh Agent on the office computer within {{ new_token_hours }} hours. It works one time.
+  <div class="mt-2"><code id="enroll-token" class="user-select-all fs-6">{{ new_token }}</code></div>
+</div>
+{% endif %}
 <div class="row g-4">
   <div class="col-lg-6"><div class="card"><div class="card-body">
     <h2 class="h5">{{ 'Office details' if office else 'Set up your office' }}</h2>
@@ -17,15 +23,37 @@
   <div class="col-lg-6">
     <div class="card mb-3"><div class="card-body">
       <h2 class="h5">Office agent</h2>
-      {% if agents %}
-        {% for a in agents %}<p class="mb-1">{{ a.name }} — {{ a.status.value }}{% if a.last_seen_at %}, last seen {{ a.last_seen_at.strftime('%Y-%m-%d %H:%M') }} UTC{% endif %}</p>{% endfor %}
-      {% else %}<p class="text-muted mb-0">No agent registered. Agent registration is not available yet in this version.</p>{% endif %}
+      {% for a in agents %}
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <div>
+          <div>{{ a.name }}{% if a.hostname %} <span class="text-muted small">({{ a.hostname }})</span>{% endif %}</div>
+          <div class="small">
+            {% if a.status.value == 'PENDING' %}<span class="badge text-bg-secondary">Waiting for registration</span>
+            {% elif agent_online(a) %}<span class="badge text-bg-success">Connected</span>
+            {% else %}<span class="badge text-bg-warning">Not connected</span>{% endif %}
+            {% if a.last_seen_at %}<span class="text-muted">last seen {{ a.last_seen_at.strftime('%Y-%m-%d %H:%M') }} UTC</span>{% endif %}
+          </div>
+        </div>
+        <form method="post" action="{{ url_for('admin.agent_revoke', public_id=a.public_id) }}"
+              data-confirm="Revoke this agent? It will stop working immediately and must be enrolled again.">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button class="btn btn-sm btn-outline-danger">Revoke</button>
+        </form>
+      </div>
+      {% else %}
+      <p class="text-muted">No agent registered yet. Generate an enrolment token, then enter it in Sesh Agent on the office computer.</p>
+      <form method="post" action="{{ url_for('admin.agent_enroll') }}" class="d-flex gap-2">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input class="form-control" name="name" maxlength="150" placeholder="Computer name (optional)">
+        <button class="btn btn-primary text-nowrap">Generate token</button>
+      </form>
+      {% endfor %}
     </div></div>
     <div class="card"><div class="card-body">
       <h2 class="h5">Printer</h2>
-      {% if printers %}
-        {% for p in printers %}<p class="mb-1">{{ p.display_name or p.windows_name }} — availability: {{ p.availability.value }}</p>{% endfor %}
-      {% else %}<p class="text-muted mb-0">No printer registered. Printer setup is not available yet in this version.</p>{% endif %}
+      {% for p in printers %}<p class="mb-1">{{ p.display_name or p.windows_name }} — availability: {{ p.availability.value }}</p>
+      {% else %}<p class="text-muted mb-0">No printer selected. Choose it in Sesh Agent on the office computer.</p>{% endfor %}
+      <p class="small text-muted mt-2 mb-0">Availability is reported by the agent from Windows. It is separate from whether the agent is connected.</p>
     </div></div>
   </div>
   {% endif %}

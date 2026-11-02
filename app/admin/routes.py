@@ -1,12 +1,13 @@
 import uuid
 
-from flask import Blueprint, current_app, flash, redirect, render_template, url_for
+from flask import Blueprint, abort, current_app, flash, redirect, render_template, request, url_for
 from flask_login import current_user
 from sqlalchemy import select
 
 from ..auth.decorators import admin_required
 from ..extensions import db
 from ..models import Agent, AgentStatus, AuditLog, Company, Printer, User
+from ..services.agents import create_enrollment, revoke_agent
 from ..services.audit import audit
 from ..services.errors import ServiceError
 from ..services.offices import create_office, get_company_office, update_office
@@ -125,3 +126,38 @@ def audit_log():
                        page=request.args.get("page", 1, type=int), per_page=50, error_out=False)
     actors = {u.id: u.full_name for u in db.session.scalars(select(User).where(User.company_id == current_user.company_id))}
     return render_template("admin/audit.html", page=page, actors=actors)
+
+
+@bp.post("/agent/enroll")
+@admin_required
+def agent_enroll():
+    office = get_company_office(current_user.company_id)
+    if office is None:
+        flash("Set up the office first.", "danger")
+        return redirect(url_for("admin.office"))
+    try:
+        name = " ".join((request.form.get("name") or "").split())[:150] or None
+        _, token = create_enrollment(office, name=name, actor=current_user)
+        db.session.commit()
+    except ServiceError as e:
+        db.session.rollback()
+        flash(str(e), "danger")
+        return redirect(url_for("admin.office"))
+    agents = db.session.scalars(select(Agent).where(Agent.company_id == current_user.company_id, Agent.office_id == office.id,
+                                                    Agent.status != AgentStatus.REVOKED)).all()
+    printers = db.session.scalars(select(Printer).where(Printer.company_id == current_user.company_id, Printer.office_id == office.id,
+                                                        Printer.is_active.is_(True))).all()
+    return render_template("admin/office.html", form=OfficeForm(obj=office), office=office, agents=agents, printers=printers,
+                           new_token=token, new_token_hours=current_app.config["AGENT_ENROLLMENT_HOURS"])  # shown once, never redirected
+
+
+@bp.post("/agent/<uuid:public_id>/revoke")
+@admin_required
+def agent_revoke(public_id: uuid.UUID):
+    agent = db.session.scalar(select(Agent).where(Agent.public_id == public_id, Agent.company_id == current_user.company_id))
+    if agent is None:
+        abort(404)
+    revoke_agent(agent, current_user)
+    db.session.commit()
+    flash("Agent revoked.", "success")
+    return redirect(url_for("admin.office"))

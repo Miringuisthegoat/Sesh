@@ -1,0 +1,6 @@
+# Sesh Agent (Windows). Install in the same venv: pip install -r requirements-agent.txt
+requests==2.32.5
+pystray==0.19.5
+Pillow==12.1.1
+pywin32==311; sys_platform == "win32"
+pyinstaller==6.16.0; sys_platform == "win32"
