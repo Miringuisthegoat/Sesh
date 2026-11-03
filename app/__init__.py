@@ -43,11 +43,13 @@ def create_app(config_object=None, overrides: dict | None = None) -> Flask:
     from .dashboard.routes import bp as dashboard_bp
     from .documents import bp as documents_bp
     from .agents import bp as agents_bp
+    from .printing import bp as printing_bp
     app.register_blueprint(auth_bp)
     app.register_blueprint(dashboard_bp)
     app.register_blueprint(documents_bp)
     app.register_blueprint(admin_bp)
     app.register_blueprint(agents_bp)
+    app.register_blueprint(printing_bp)
     csrf.exempt(agents_bp)  # machine API: bearer credential, no cookies
     from .services.agents import is_online
     app.jinja_env.globals["agent_online"] = is_online

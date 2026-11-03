@@ -15,6 +15,7 @@
     {% if pdf %}
     <a class="btn btn-outline-secondary" href="{{ url_for('documents.pdf', public_id=doc.public_id) }}" target="_blank" rel="noopener">Open PDF</a>
     <a class="btn btn-outline-secondary" href="{{ url_for('documents.pdf', public_id=doc.public_id, download=1) }}">Download PDF</a>
+    {% if can_modify %}<a class="btn btn-primary" href="{{ url_for('printing.new', public_id=doc.public_id) }}">Print</a>{% endif %}
     {% endif %}
     {% if can_modify %}
     <form method="post" action="{{ url_for('documents.delete', public_id=doc.public_id) }}" data-confirm="Remove this document from the list?">
@@ -50,7 +51,7 @@
     <ul class="mb-0 small">{% for w in pdf.warnings %}<li>{{ w }}</li>{% endfor %}</ul></div>
   {% endif %}
   <h2 class="h5">Preview</h2>
-  <p class="small text-muted">Check this carefully: it is the exact PDF that would be printed. Printing is not available yet in this version.</p>
+  <p class="small text-muted">Check this carefully: it is the exact PDF that will be printed.</p>
   {% for n in range(1, preview_pages + 1) %}
   <img class="img-fluid border bg-white mb-3 d-block" loading="lazy" alt="Page {{ n }} of {{ pdf.page_count }}"
        src="{{ url_for('documents.page_image', public_id=doc.public_id, number=n) }}">

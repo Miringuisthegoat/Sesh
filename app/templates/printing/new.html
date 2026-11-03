@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Print {{ doc.original_filename }}{% endblock %}
+{% block content %}
+<nav aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="{{ url_for('documents.index') }}">Documents</a></li>
+  <li class="breadcrumb-item"><a href="{{ url_for('documents.detail', public_id=doc.public_id) }}">{{ doc.original_filename }}</a></li><li class="breadcrumb-item active">Print</li></ol></nav>
+<h1 class="h3 mb-3">Print <span class="text-break">{{ doc.original_filename }}</span></h1>
+<div class="row g-4">
+  <div class="col-lg-6">
+    <div class="card"><div class="card-body">
+      <form method="post" novalidate>
+        {{ form.hidden_tag() }}
+        <div class="mb-3">
+          {{ form.copies.label(class="form-label") }}
+          {{ form.copies(class="form-control" ~ (" is-invalid" if form.copies.errors else ""), min=1, max=max_copies) }}
+          <div class="form-text">Up to {{ max_copies }} copies.</div>
+          {% for e in form.copies.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="mb-3">{{ form.paper_size.label(class="form-label") }}{{ form.paper_size(class="form-select") }}</div>
+        {% if printer is none or printer.supports_color is not false %}
+        <div class="mb-3">{{ form.color.label(class="form-label") }}{{ form.color(class="form-select") }}</div>
+        {% endif %}
+        <div class="mb-3">{{ form.orientation.label(class="form-label") }}{{ form.orientation(class="form-select") }}</div>
+        <p class="small text-muted">The office printer's driver has the final say on these options. Check the printed result.</p>
+        <button class="btn btn-primary" {{ 'disabled' if not can_print }}>Send to office printer</button>
+        <a class="btn btn-link" href="{{ url_for('documents.detail', public_id=doc.public_id) }}">Cancel</a>
+      </form>
+    </div></div>
+  </div>
+  <div class="col-lg-6">
+    <div class="card mb-3"><div class="card-body">
+      <h2 class="h6">Office printer</h2>
+      {% if not agent %}
+        <div class="alert alert-danger mb-0">No office computer is registered yet.{% if current_user.is_admin %} <a href="{{ url_for('admin.office') }}">Set it up</a>.{% else %} Ask your administrator.{% endif %}</div>
+      {% elif agent.status.value == 'PENDING' %}
+        <div class="alert alert-warning mb-0">The office computer has not finished registering yet.</div>
+      {% elif not printer %}
+        <div class="alert alert-warning mb-0">No printer has been chosen on the office computer yet.</div>
+      {% else %}
+        <p class="mb-1">{{ printer.display_name or printer.windows_name }}</p>
+        <p class="mb-1 small">Office computer:
+          {% if agent_connected %}<span class="badge text-bg-success">Connected</span>{% else %}<span class="badge text-bg-warning">Not connected</span>{% endif %}
+          · Windows reports the printer as:
+          <span class="badge text-bg-secondary">{{ {'AVAILABLE':'no problem','OFFLINE':'offline','ERROR':'needs attention','UNKNOWN':'status unknown'}[printer.availability.value] }}</span></p>
+        {% if not agent_connected %}<div class="alert alert-warning mt-2 mb-0 small">The office computer is not connected right now. Your job will wait in the queue and print when it reconnects.</div>{% endif %}
+        <p class="small text-muted mt-2 mb-0">Windows' printer status is only a hint: it cannot prove the printer is on or has paper.</p>
+      {% endif %}
+    </div></div>
+    {% if pdf.warnings %}
+    <div class="alert alert-warning"><strong>Conversion notes</strong>: the PDF may differ from the original.
+      <ul class="mb-0 small">{% for w in pdf.warnings %}<li>{{ w }}</li>{% endfor %}</ul></div>
+    {% endif %}
+    <p class="small text-muted">{{ pdf.page_count }} page{{ 's' if pdf.page_count != 1 }}. <a href="{{ url_for('documents.detail', public_id=doc.public_id) }}">Review the preview</a> before printing.</p>
+  </div>
+</div>
+{% endblock %}

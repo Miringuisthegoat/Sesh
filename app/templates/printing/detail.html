@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% from "printing/_status.html" import badge %}
+{% block title %}Print job{% endblock %}
+{% block content %}
+<nav aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="{{ url_for('printing.queue') }}">Print jobs</a></li>
+  <li class="breadcrumb-item active text-break">{{ doc.original_filename }}</li></ol></nav>
+<div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
+  <div>
+    <h1 class="h4 mb-1 text-break">{{ doc.original_filename }}</h1>
+    <div id="job-status" data-status="{{ job.status.value }}" data-url="{{ url_for('printing.status', public_id=job.public_id) }}">
+      {{ badge(job.status.value, labels) }}
+      {% if job.status.value in ('QUEUED', 'CLAIMED', 'DOWNLOADING', 'DOWNLOADED') %}<span class="small text-muted ms-2">This page updates automatically.</span>{% endif %}
+    </div>
+  </div>
+  <div class="d-flex gap-2">
+    {% if can_cancel %}
+    <form method="post" action="{{ url_for('printing.cancel', public_id=job.public_id) }}" data-confirm="Cancel this print job?">{{ form.hidden_tag() }}<button class="btn btn-outline-danger">Cancel job</button></form>
+    {% endif %}
+    {% if can_resubmit %}
+    <form method="post" action="{{ url_for('printing.resubmit_job', public_id=job.public_id) }}">{{ form.hidden_tag() }}<button class="btn btn-primary">Submit again</button></form>
+    {% endif %}
+  </div>
+</div>
+
+{% set tone = {'FAILED':'danger','UNKNOWN':'warning','SUBMITTED_TO_PRINTER':'info','COMPLETED':'success'}.get(job.status.value, 'secondary') %}
+<div class="alert alert-{{ tone }}">
+  <div>{{ explain[job.status.value] }}</div>
+  {% if job.error_message %}<div class="mt-1"><strong>Details:</strong> {{ job.error_message }}{% if current_user.is_admin and job.error_code %} <code class="small">{{ job.error_code }}</code>{% endif %}</div>{% endif %}
+</div>
+
+{% if can_resolve %}
+<div class="card mb-4 border-warning"><div class="card-body">
+  <h2 class="h6">Settle this job (administrator)</h2>
+  <p class="small">Look at the printer. Did this document come out?</p>
+  <form method="post" action="{{ url_for('printing.resolve', public_id=job.public_id) }}" class="row g-2">
+    {{ form.hidden_tag() }}
+    <div class="col-12"><input class="form-control" name="note" maxlength="200" placeholder="Note (optional)"></div>
+    <div class="col-auto"><button class="btn btn-success" name="outcome" value="printed">It printed</button></div>
+    <div class="col-auto"><button class="btn btn-outline-danger" name="outcome" value="not_printed">It did not print</button></div>
+  </form>
+  <p class="small text-muted mt-2 mb-0">If it did not print, you or the worker can then submit it again. Sesh never reprints an uncertain job by itself.</p>
+</div></div>
+{% endif %}
+
+<div class="card"><div class="card-body">
+  <dl class="row mb-0 small">
+    <dt class="col-sm-3">Document</dt><dd class="col-sm-9">{% if doc.deleted_at %}{{ doc.original_filename }} (removed){% else %}<a href="{{ url_for('documents.detail', public_id=doc.public_id) }}">{{ doc.original_filename }}</a>{% endif %}</dd>
+    <dt class="col-sm-3">Requested by</dt><dd class="col-sm-9">{{ job.requested_by.full_name }}</dd>
+    <dt class="col-sm-3">Printer</dt><dd class="col-sm-9">{{ job.printer.display_name or job.printer.windows_name }}</dd>
+    <dt class="col-sm-3">Options</dt><dd class="col-sm-9">{{ job.copies }} cop{{ 'y' if job.copies == 1 else 'ies' }}, {{ job.paper_size }}, {{ 'colour' if job.color is true else 'black and white' if job.color is false else 'printer default colour' }}, {{ 'landscape' if job.landscape is true else 'portrait' if job.landscape is false else 'document default orientation' }}</dd>
+    <dt class="col-sm-3">Created</dt><dd class="col-sm-9">{{ job.created_at.strftime('%Y-%m-%d %H:%M') }} UTC</dd>
+    {% if job.submitted_at %}<dt class="col-sm-3">Sent to printer</dt><dd class="col-sm-9">{{ job.submitted_at.strftime('%Y-%m-%d %H:%M') }} UTC</dd>{% endif %}
+    {% if job.finished_at %}<dt class="col-sm-3">Finished</dt><dd class="col-sm-9">{{ job.finished_at.strftime('%Y-%m-%d %H:%M') }} UTC</dd>{% endif %}
+  </dl>
+</div></div>
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='printing.js') }}"></script>{% endblock %}

@@ -18,6 +18,7 @@
         <li class="nav-item"><a class="nav-link" href="{{ url_for('dashboard.index') }}">Dashboard</a></li>
         <li class="nav-item"><a class="nav-link" href="{{ url_for('documents.upload') }}">Upload</a></li>
         <li class="nav-item"><a class="nav-link" href="{{ url_for('documents.index') }}">Documents</a></li>
+        <li class="nav-item"><a class="nav-link" href="{{ url_for('printing.queue') }}">Print jobs</a></li>
         {% if current_user.is_admin %}
         <li class="nav-item"><a class="nav-link" href="{{ url_for('admin.workers') }}">Workers</a></li>
         <li class="nav-item"><a class="nav-link" href="{{ url_for('admin.company_settings') }}">Company</a></li>

@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% from "printing/_status.html" import badge %}
+{% block title %}Print jobs{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h3 mb-0">{{ 'Company print jobs' if show_owner else 'My print jobs' }}</h1>
+  <a class="btn btn-primary" href="{{ url_for('documents.index') }}">Choose a document to print</a>
+</div>
+<ul class="nav nav-pills mb-3">
+  {% for key, v in views.items() %}
+  <li class="nav-item"><a class="nav-link {{ 'active' if key == view }}" href="{{ url_for('printing.' ~ key) }}">{{ v[0] }}</a></li>
+  {% endfor %}
+</ul>
+{% if pagination.items %}
+<div class="card"><div class="table-responsive"><table class="table align-middle mb-0">
+  <thead><tr><th>Document</th><th>Copies</th>{% if show_owner %}<th>Requested by</th>{% endif %}<th>Status</th><th>Created</th></tr></thead>
+  <tbody>
+  {% for j in pagination.items %}
+    <tr>
+      <td><a class="text-break" href="{{ url_for('printing.detail', public_id=j.public_id) }}">{{ j.converted_file.document.original_filename }}</a></td>
+      <td>{{ j.copies }}</td>
+      {% if show_owner %}<td class="small">{{ j.requested_by.full_name }}</td>{% endif %}
+      <td>{{ badge(j.status.value, labels) }}</td>
+      <td class="small">{{ j.created_at.strftime('%Y-%m-%d %H:%M') }} UTC</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table></div></div>
+{% if pagination.pages > 1 %}
+<nav class="mt-3"><ul class="pagination">
+  {% for p in range(1, pagination.pages + 1) %}
+  <li class="page-item {{ 'active' if p == pagination.page }}"><a class="page-link" href="{{ url_for('printing.' ~ view, page=p) }}">{{ p }}</a></li>
+  {% endfor %}
+</ul></nav>
+{% endif %}
+{% else %}
+<div class="card"><div class="card-body text-center py-5"><p class="mb-0">{{ empty }}</p></div></div>
+{% endif %}
+<p class="small text-muted mt-3">"Sent to printer" means Windows on the office computer accepted the job. It does not prove that paper came out.</p>
+{% endblock %}

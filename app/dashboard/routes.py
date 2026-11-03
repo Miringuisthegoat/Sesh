@@ -6,6 +6,9 @@ from ..extensions import db
 from ..models import Agent, AgentStatus, Printer, User, UserRole
 from ..models import ConversionStatus, Document, DocumentStatus
 from ..services.documents import visible_documents
+from ..models import PrintJob, PrintJobStatus
+from ..printing.labels import JOB_LABELS
+from ..services.print_jobs import PENDING, visible_print_jobs
 from ..services.offices import get_company_office
 
 bp = Blueprint("dashboard", __name__)
@@ -30,5 +33,16 @@ def index():
     in_progress = db.session.scalar(select(func.count()).select_from(visible.where(
         Document.status.in_([DocumentStatus.UPLOADED, DocumentStatus.QUEUED, DocumentStatus.PROCESSING])).subquery()))
     failed = db.session.scalar(select(func.count()).select_from(visible.where(Document.status == DocumentStatus.FAILED).subquery()))
+    jobs = visible_print_jobs(current_user)
+    recent_jobs = db.session.scalars(jobs.order_by(PrintJob.created_at.desc()).limit(5)).all()
+
+    def _count(*states):
+        return db.session.scalar(select(func.count()).select_from(jobs.where(PrintJob.status.in_(states)).subquery()))
+    jobs_waiting = _count(*PENDING)
+    jobs_attention = _count(PrintJobStatus.FAILED, PrintJobStatus.UNKNOWN)
+    if stats is not None:
+        stats["jobs_total"] = db.session.scalar(select(func.count()).select_from(jobs.subquery()))
+        stats["jobs_attention"] = jobs_attention
     return render_template("dashboard.html", office=office, agent=agent, printer=printer, stats=stats,
-                           recent=recent, in_progress=in_progress, failed=failed)
+                           recent=recent, in_progress=in_progress, failed=failed, recent_jobs=recent_jobs,
+                           jobs_waiting=jobs_waiting, jobs_attention=jobs_attention, job_labels=JOB_LABELS)

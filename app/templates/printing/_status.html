@@ -1,0 +1,4 @@
+{% macro badge(status, labels) %}
+{% set cls = {'QUEUED':'secondary','CLAIMED':'info','DOWNLOADING':'info','DOWNLOADED':'info','SUBMITTED_TO_PRINTER':'primary','COMPLETED':'success','FAILED':'danger','CANCELLED':'dark','UNKNOWN':'warning'}[status] %}
+<span class="badge text-bg-{{ cls }}">{{ labels[status] }}</span>
+{% endmacro %}
