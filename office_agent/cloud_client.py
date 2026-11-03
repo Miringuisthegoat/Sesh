@@ -1,6 +1,9 @@
 """HTTPS client for the Sesh agent API (see docs/AGENT_API.md). Outbound only; the credential never appears in errors/logs."""
 from __future__ import annotations
 
+import hashlib
+from pathlib import Path
+
 from .config import VERSION, normalize_server_url
 
 API = "/api/agent/v1"
@@ -22,6 +25,10 @@ class Rejected(CloudError):
 
 class Unavailable(CloudError):
     """Network trouble, redirect, 429 or 5xx. Retry later with backoff."""
+
+
+class ChecksumMismatch(CloudError):
+    """The downloaded bytes do not match the checksum/size the server announced. The file must not be printed."""
 
 
 class CloudClient:
@@ -81,3 +88,63 @@ class CloudClient:
 
     def unregister(self) -> None:
         self._call("POST", "/unregister")
+
+    # ---- print jobs (Phase 5b) ---------------------------------------------------------------------------------
+    def claim_job(self) -> dict | None:
+        job = self._call("POST", "/jobs/claim").get("job")
+        return job if isinstance(job, dict) else None
+
+    def report_status(self, job_id: str, claim_token: str, status: str, code: str | None = None, message: str | None = None) -> None:
+        self._call("POST", f"/jobs/{job_id}/status", {"claim_token": claim_token, "status": status, "error_code": code, "error_message": message})
+
+    def renew_lease(self, job_id: str, claim_token: str) -> None:
+        self._call("POST", f"/jobs/{job_id}/lease", {"claim_token": claim_token})
+
+    def download_pdf(self, job_id: str, claim_token: str, dest: Path, expected_sha256: str, expected_size: int | None,
+                     max_bytes: int) -> None:
+        """Stream the job's PDF to `dest`, hashing as it arrives. Raises ChecksumMismatch (file deleted) if bytes differ."""
+        import requests
+        headers = {"User-Agent": f"SeshAgent/{VERSION}", "Authorization": "Bearer " + (self._credential or ""), "X-Claim-Token": claim_token}
+        try:
+            r = self._sess().request("GET", f"{self.base}/jobs/{job_id}/pdf", headers=headers, timeout=(5, 60),
+                                     allow_redirects=False, stream=True)
+        except requests.RequestException as e:
+            raise Unavailable("NETWORK", "Cannot reach the Sesh server. Check the internet connection.") from e
+        try:
+            status = r.status_code
+            if 300 <= status < 400:
+                raise Unavailable("REDIRECT", "The server address redirected the agent.", status)
+            if status != 200:
+                try:
+                    data = r.json()
+                except ValueError:
+                    data = None
+                err = data.get("error", {}) if isinstance(data, dict) and isinstance(data.get("error"), dict) else {}
+                code, msg = str(err.get("code", "ERROR")), str(err.get("message", f"The server returned an error ({status})."))[:300]
+                if status == 401:
+                    raise Unauthorized(code, msg, status)
+                if status == 429 or status >= 500:
+                    raise Unavailable(code, msg, status)
+                raise Rejected(code, msg, status)
+            digest, size = hashlib.sha256(), 0
+            try:
+                with open(dest, "wb") as f:
+                    for chunk in r.iter_content(65536):
+                        if not chunk:
+                            continue
+                        size += len(chunk)
+                        if size > max_bytes:
+                            raise ChecksumMismatch("TOO_LARGE", "The PDF is larger than this computer accepts.")
+                        digest.update(chunk)
+                        f.write(chunk)
+            except requests.RequestException as e:
+                Path(dest).unlink(missing_ok=True)
+                raise Unavailable("NETWORK", "The download was interrupted.") from e
+            except ChecksumMismatch:
+                Path(dest).unlink(missing_ok=True)
+                raise
+        finally:
+            getattr(r, "close", lambda: None)()
+        if digest.hexdigest() != expected_sha256.lower() or (expected_size is not None and size != expected_size):
+            Path(dest).unlink(missing_ok=True)
+            raise ChecksumMismatch("CHECKSUM", "The downloaded PDF does not match its checksum.")

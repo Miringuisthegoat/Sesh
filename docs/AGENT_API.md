@@ -13,3 +13,17 @@ Authenticated calls send `Authorization: Bearer <credential>`; any failure is `4
 Not in 4a (arrives with Phase 5): job claim, PDF download, job status updates.
 Admin side: `/admin/office` shows agent state, "Generate token" (one agent per office in the MVP) and "Revoke".
 Known gaps: AgentEvent rows are not pruned yet; an expired, never-used enrolment keeps its slot until an admin revokes it.
+
+
+## Print jobs (Phase 5b)
+All bearer-authenticated like the calls above. A job is identified by its public id; the **claim token** returned by `claim` proves this agent holds it (only its hash is stored server-side).
+
+| Call | Purpose |
+|---|---|
+| `POST /jobs/claim` | Atomically take the oldest queued job for this office/printers. `{job: null}` if none, else `{job: {id, claim_token, printer, copies, paper_size, color, landscape, sha256, size_bytes, pages, lease_seconds}}`. The token is shown once. |
+| `GET /jobs/<id>/pdf` + header `X-Claim-Token` | Streams the PDF (`X-Content-SHA256` header). Only while the agent holds the job (CLAIMED/DOWNLOADING/DOWNLOADED); renews the lease. |
+| `POST /jobs/<id>/status` `{claim_token, status, error_code?, error_message?}` | Report DOWNLOADING, DOWNLOADED, SUBMITTED_TO_PRINTER, COMPLETED, FAILED, UNKNOWN, or QUEUED (hand the job back). Repeating the current status is a no-op. Each report renews the lease. |
+| `POST /jobs/<id>/lease` `{claim_token}` | Renew the lease without changing status. |
+
+Errors: `404 JOB_NOT_FOUND` (unknown, not held, wrong token, or already handed back), `409 JOB_CANCELLED` / `ILLEGAL_TRANSITION` / `JOB_NOT_AVAILABLE` (body includes `job_status`). On 404 or 409 the agent must stop working on that job and never print it.
+Lease: if the agent stops reporting for `JOB_LEASE_SECONDS`, CLAIMED/DOWNLOADING jobs are requeued, DOWNLOADED jobs become UNKNOWN (never reprinted automatically).

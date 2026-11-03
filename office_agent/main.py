@@ -39,6 +39,12 @@ def main() -> None:
                            lambda url, cred: CloudClient(url, cred))
     log.info("Sesh Agent started (state: %s)", service.state.value)
     threading.Thread(target=service.run_forever, name="heartbeat", daemon=True).start()
+    from .job_journal import JobJournal
+    from .job_processor import JobProcessor
+    from .print_submitter import FakeSubmitter, SumatraSubmitter
+    submitter = FakeSubmitter() if os.environ.get("SESH_AGENT_FAKE_PRINTERS") == "1" else SumatraSubmitter()
+    processor = JobProcessor(service, JobJournal(db, default_protector()), submitter)
+    threading.Thread(target=processor.run_forever, name="jobs", daemon=True).start()
     Ui(service).run()
     log.info("Sesh Agent stopped")
 

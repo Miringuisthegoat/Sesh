@@ -80,6 +80,26 @@ class LocalDatabase:
             rows = self._conn.execute("SELECT ts,level,message FROM activity ORDER BY id DESC LIMIT ?", (limit,)).fetchall()
         return [dict(r) for r in rows]
 
+    # ---- job-recovery journal (Phase 5b); see job_journal.py -------------------------------------------------
+    def job_save(self, job_id: str, stage: str, printer: str | None = None, detail: str | None = None) -> None:
+        self._run("INSERT INTO jobs(job_id,stage,printer,detail,updated_at) VALUES(?,?,?,?,?) "
+                  "ON CONFLICT(job_id) DO UPDATE SET stage=excluded.stage, printer=COALESCE(excluded.printer, printer), "
+                  "detail=COALESCE(excluded.detail, detail), updated_at=excluded.updated_at", (job_id, stage, printer, detail, _now()))
+
+    def job_get(self, job_id: str) -> dict | None:
+        with self._lock:
+            row = self._conn.execute("SELECT job_id,stage,printer,detail,updated_at FROM jobs WHERE job_id=?", (job_id,)).fetchone()
+        return dict(row) if row else None
+
+    def jobs_not_in(self, stage: str) -> list[dict]:
+        with self._lock:
+            rows = self._conn.execute("SELECT job_id,stage,printer,detail,updated_at FROM jobs WHERE stage<>? ORDER BY updated_at", (stage,)).fetchall()
+        return [dict(r) for r in rows]
+
+    def jobs_prune(self, keep: int = 50) -> None:
+        self._run("DELETE FROM jobs WHERE stage='DONE' AND job_id NOT IN "
+                  "(SELECT job_id FROM jobs WHERE stage='DONE' ORDER BY updated_at DESC LIMIT ?)", (keep,))
+
     def close(self) -> None:
         with self._lock:
             self._conn.close()

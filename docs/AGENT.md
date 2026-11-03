@@ -34,3 +34,11 @@ If the stored credential cannot be decrypted (different Windows user/PC), the ag
 5. Disconnect the internet: icon turns amber, recovers by itself. Revoke on the Office page: the agent turns red within ~30 s and asks for a new token.
 6. Sign out/in with "start automatically" ticked: agent starts. Run installer again over itself: data kept. Uninstall: both choices of the data prompt behave.
 7. `agent.log` contains no token/credential.
+
+
+## Printing (Phase 5b)
+The agent now takes jobs: claim -> download -> verify SHA-256 -> tell the server (DOWNLOADED) -> print with SumatraPDF -> report SUBMITTED_TO_PRINTER. That status means **Windows accepted the job**, not that paper came out.
+**SumatraPDF is not bundled** (licence review open, decision 4). Install it, or put `SumatraPDF.exe` next to `SeshAgent.exe` or in `%LOCALAPPDATA%\SeshAgent\bin`, or set `SUMATRA_PATH`. Without it the agent takes no jobs and says so in the activity log.
+Pause printing stops new claims (recovery still runs). The printer must be installed, ticked and not reported offline by Windows, otherwise the job fails with PRINTER_UNAVAILABLE.
+Crash/restart recovery (journal in `agent.db`): CLAIMED/DOWNLOADING -> handed back to the queue; DOWNLOADED -> FAILED (nothing printed; submit again); SUBMITTING -> UNKNOWN (an administrator checks the printer); SUBMITTED -> report resent. Nothing is ever printed twice automatically.
+Real-printer checklist (NOT yet done): print a 1-page docx and a multi-page xlsx; check copies, A4/Letter, colour/mono, landscape; unplug the printer mid-job; kill the agent during printing and confirm UNKNOWN; cancel a queued job; test with the printer off.

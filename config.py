@@ -65,6 +65,8 @@ class Config:
     AGENT_REGISTER_RATE_LIMIT = os.environ.get("AGENT_REGISTER_RATE_LIMIT", "10 per minute")
     JOB_LEASE_SECONDS = _int("JOB_LEASE_SECONDS", 120)
     MAX_CONVERSION_RETRIES = _int("MAX_CONVERSION_RETRIES", 3)
+    MAX_JOB_ATTEMPTS = _int("MAX_JOB_ATTEMPTS", 3)  # claims of one print job before it is failed as AGENT_LOST
+    MAX_PENDING_JOBS_PER_USER = _int("MAX_PENDING_JOBS_PER_USER", 20)
 
     # Storage / queue (used from Phase 3)
     STORAGE_BACKEND = os.environ.get("STORAGE_BACKEND", "local")
