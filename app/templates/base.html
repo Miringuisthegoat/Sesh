@@ -3,46 +3,118 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f7f6f3">
   <title>{% block title %}Sesh{% endblock %} · Sesh</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="{{ url_for('static', filename='app.css') }}" rel="stylesheet">
 </head>
-<body class="bg-light">
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-  <div class="container">
-    <a class="navbar-brand" href="{{ url_for('dashboard.index') }}">Sesh</a>
-    {% if current_user.is_authenticated %}
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav" aria-controls="nav" aria-expanded="false" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
-    <div class="collapse navbar-collapse" id="nav">
-      <ul class="navbar-nav me-auto">
-        <li class="nav-item"><a class="nav-link" href="{{ url_for('dashboard.index') }}">Dashboard</a></li>
-        <li class="nav-item"><a class="nav-link" href="{{ url_for('documents.upload') }}">Upload</a></li>
-        <li class="nav-item"><a class="nav-link" href="{{ url_for('documents.index') }}">Documents</a></li>
-        <li class="nav-item"><a class="nav-link" href="{{ url_for('printing.queue') }}">Print jobs</a></li>
-        {% if current_user.is_admin %}
-        <li class="nav-item"><a class="nav-link" href="{{ url_for('admin.workers') }}">Workers</a></li>
-        <li class="nav-item"><a class="nav-link" href="{{ url_for('admin.company_settings') }}">Company</a></li>
-        <li class="nav-item"><a class="nav-link" href="{{ url_for('admin.office') }}">Office</a></li>
-        <li class="nav-item"><a class="nav-link" href="{{ url_for('admin.audit_log') }}">Audit log</a></li>
-        {% endif %}
-      </ul>
-      <form method="post" action="{{ url_for('auth.logout') }}" class="d-flex align-items-center gap-2">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <span class="navbar-text small">{{ current_user.full_name }} ({{ current_user.role.value }})</span>
-        <button class="btn btn-outline-light btn-sm">Sign out</button>
-      </form>
-    </div>
-    {% endif %}
-  </div>
-</nav>
-<main class="container py-4">
+<body class="{{ 'sesh-app-page' if current_user.is_authenticated else 'sesh-auth-page' }}">
+{% set endpoint = request.endpoint or '' %}
+{% set page_content %}
   {% with messages = get_flashed_messages(with_categories=true) %}
     {% for category, message in messages %}
       <div class="alert alert-{{ category if category in ['success','danger','info','warning'] else 'info' }}" role="alert">{{ message }}</div>
     {% endfor %}
   {% endwith %}
   {% block content %}{% endblock %}
-</main>
+{% endset %}
+{% if current_user.is_authenticated %}
+<div class="sesh-layout">
+  <aside class="sesh-sidebar offcanvas-lg offcanvas-start" tabindex="-1" id="seshSidebar" aria-label="Main navigation">
+    <div class="sidebar-heading">
+      <a class="sesh-brand" href="{{ url_for('dashboard.index') }}">
+        <span class="brand-mark"><img src="{{ url_for('static', filename='images/seshat-logo.webp') }}" alt="Seshat mark"></span>
+        <span class="brand-copy"><strong>Sesh</strong><small>OFFICE WORKSPACE</small></span>
+      </a>
+      <button type="button" class="btn-close d-lg-none" data-bs-dismiss="offcanvas" aria-label="Close navigation"></button>
+    </div>
+
+    <div class="sidebar-company">
+      <span class="company-monogram" aria-hidden="true">{{ current_user.company.name[:1] | upper }}</span>
+      <span class="company-copy"><strong>{{ current_user.company.name }}</strong><small>Workspace</small></span>
+    </div>
+
+    <p class="sidebar-label">WORKSPACE</p>
+    <nav class="sesh-nav" aria-label="Workspace">
+      <a class="sesh-nav-link {{ 'is-active' if endpoint == 'dashboard.index' else '' }}" href="{{ url_for('dashboard.index') }}">
+        <span class="nav-mark" aria-hidden="true"></span><span>Dashboard</span>
+      </a>
+      <a class="sesh-nav-link {{ 'is-active' if endpoint in ['documents.index', 'documents.detail'] else '' }}" href="{{ url_for('documents.index') }}">
+        <span class="nav-mark" aria-hidden="true"></span><span>Documents</span>
+      </a>
+      <a class="sesh-nav-link {{ 'is-active' if endpoint == 'documents.upload' else '' }}" href="{{ url_for('documents.upload') }}">
+        <span class="nav-mark" aria-hidden="true"></span><span>Upload document</span>
+      </a>
+      <a class="sesh-nav-link {{ 'is-active' if endpoint in ['printing.queue', 'printing.history', 'printing.attention', 'printing.new', 'printing.detail'] else '' }}" href="{{ url_for('printing.queue') }}">
+        <span class="nav-mark" aria-hidden="true"></span><span>Print jobs</span>
+      </a>
+    </nav>
+
+    {% if current_user.is_admin %}
+    <p class="sidebar-label sidebar-label-spaced">MANAGE</p>
+    <nav class="sesh-nav" aria-label="Administration">
+      <a class="sesh-nav-link {{ 'is-active' if endpoint in ['admin.workers', 'admin.worker_password'] else '' }}" href="{{ url_for('admin.workers') }}">
+        <span class="nav-mark" aria-hidden="true"></span><span>Workers</span>
+      </a>
+      <a class="sesh-nav-link {{ 'is-active' if endpoint == 'admin.company_settings' else '' }}" href="{{ url_for('admin.company_settings') }}">
+        <span class="nav-mark" aria-hidden="true"></span><span>Company settings</span>
+      </a>
+      <a class="sesh-nav-link {{ 'is-active' if endpoint == 'admin.office' else '' }}" href="{{ url_for('admin.office') }}">
+        <span class="nav-mark" aria-hidden="true"></span><span>Office &amp; printer</span>
+      </a>
+      <a class="sesh-nav-link {{ 'is-active' if endpoint == 'admin.audit_log' else '' }}" href="{{ url_for('admin.audit_log') }}">
+        <span class="nav-mark" aria-hidden="true"></span><span>Audit log</span>
+      </a>
+    </nav>
+    {% endif %}
+
+    <div class="sidebar-bottom">
+      <div class="privacy-note">
+        <span class="privacy-indicator" aria-hidden="true"></span>
+        <div><strong>Private by design</strong><small>Your files stay in your workspace.</small></div>
+      </div>
+      <div class="sidebar-user">
+        <span class="user-avatar" aria-hidden="true">{{ current_user.full_name[:1] | upper }}</span>
+        <span class="sidebar-user-copy"><strong>{{ current_user.full_name }}</strong><small>{{ current_user.role.value | title }}</small></span>
+        <form method="post" action="{{ url_for('auth.logout') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button class="signout-button" type="submit" aria-label="Sign out">Sign out</button>
+        </form>
+      </div>
+    </div>
+  </aside>
+
+  <div class="sesh-main">
+    <header class="sesh-topbar">
+      <div class="topbar-context">
+        <button class="mobile-nav-button d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#seshSidebar" aria-controls="seshSidebar" aria-label="Open navigation">
+          <span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span>
+        </button>
+        <span class="topbar-overline">Sesh</span><span class="topbar-separator">/</span><strong>{{ current_user.company.name }}</strong>
+      </div>
+      <div class="topbar-account">
+        <div class="topbar-user-copy"><strong>{{ current_user.full_name }}</strong><small>{{ current_user.role.value | title }}</small></div>
+        <span class="user-avatar topbar-avatar" aria-hidden="true">{{ current_user.full_name[:1] | upper }}</span>
+      </div>
+    </header>
+
+    <main class="sesh-content">
+      {{ page_content }}
+    </main>
+  </div>
+</div>
+{% else %}
+<div class="sesh-auth-layout">
+  <a class="sesh-brand auth-brand" href="{{ url_for('auth.login') }}">
+    <span class="brand-mark"><img src="{{ url_for('static', filename='images/seshat-logo.webp') }}" alt="Seshat mark"></span>
+    <span class="brand-copy"><strong>Sesh</strong><small>OFFICE WORKSPACE</small></span>
+  </a>
+  <main class="sesh-auth-content">
+    {{ page_content }}
+  </main>
+  <p class="auth-footer">Secure document conversion and print management</p>
+</div>
+{% endif %}
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="{{ url_for('static', filename='app.js') }}"></script>
 {% block scripts %}{% endblock %}

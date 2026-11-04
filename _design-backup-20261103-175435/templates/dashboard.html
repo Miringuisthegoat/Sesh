@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% from "documents/_status.html" import badge %}
+{% from "printing/_status.html" import badge as job_badge %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<h1 class="h3 mb-1">Welcome, {{ current_user.full_name }}</h1>
+<p class="text-muted">{{ current_user.company.name }}</p>
+<div class="row g-3">
+  <div class="col-md-4"><div class="card h-100"><div class="card-body">
+    <h2 class="h6 text-uppercase text-muted">Office</h2>
+    {% if office %}<p class="mb-0 fs-5">{{ office.name }}</p>
+    {% else %}<p class="mb-0">Not set up yet.{% if current_user.is_admin %} <a href="{{ url_for('admin.office') }}">Set up the office</a>.{% else %} Ask your administrator.{% endif %}</p>{% endif %}
+  </div></div></div>
+  <div class="col-md-4"><div class="card h-100"><div class="card-body">
+    <h2 class="h6 text-uppercase text-muted">Office agent (computer)</h2>
+    <p class="mb-0">{% if agent %}{{ agent.name }} ·
+      {% if agent.status.value == 'PENDING' %}<span class="badge text-bg-secondary">Waiting for registration</span>
+      {% elif agent_online(agent) %}<span class="badge text-bg-success">Connected</span>
+      {% else %}<span class="badge text-bg-warning">Not connected</span>{% endif %}
+      {% else %}No agent registered yet.{% endif %}</p>
+  </div></div></div>
+  <div class="col-md-4"><div class="card h-100"><div class="card-body">
+    <h2 class="h6 text-uppercase text-muted">Printer</h2>
+    <p class="mb-0">{% if printer %}{{ printer.display_name or printer.windows_name }}
+      <span class="small text-muted d-block">Windows reports: {{ {'AVAILABLE':'no problem','OFFLINE':'offline','ERROR':'needs attention','UNKNOWN':'status unknown'}[printer.availability.value] }} (a hint only, shown separately from the computer's connection)</span>
+      {% else %}No printer registered yet.{% endif %}</p>
+  </div></div></div>
+  {% if stats %}
+  <div class="col-12"><div class="card"><div class="card-body">
+    <h2 class="h6 text-uppercase text-muted">Workers and printing</h2>
+    <p class="mb-0">{{ stats.active_workers }} active, {{ stats.inactive_workers }} inactive</p>
+    <p class="mb-0 small text-muted">{{ stats.jobs_total }} print job{{ 's' if stats.jobs_total != 1 }} in total · {{ stats.jobs_attention }} failed or uncertain</p>
+  </div></div></div>
+  {% endif %}
+</div>
+<div class="card mt-3"><div class="card-body">
+  <div class="d-flex justify-content-between align-items-center mb-2">
+    <h2 class="h6 text-uppercase text-muted mb-0">Recent documents</h2>
+    <a class="btn btn-sm btn-primary" href="{{ url_for('documents.upload') }}">Upload</a>
+  </div>
+  <p class="small text-muted mb-2">{{ in_progress }} converting or waiting · {{ failed }} failed</p>
+  {% if recent %}
+  <ul class="list-unstyled mb-0">
+    {% for d in recent %}
+    <li class="d-flex justify-content-between align-items-center py-1 border-top">
+      <a href="{{ url_for('documents.detail', public_id=d.public_id) }}" class="text-break">{{ d.original_filename }}</a>
+      {{ badge(d.status.value, {'UPLOADED':'Uploaded','QUEUED':'Waiting to convert','PROCESSING':'Converting','CONVERTED':'Ready','FAILED':'Failed'}) }}
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}<p class="mb-0">No documents yet.</p>{% endif %}
+</div></div>
+<div class="card mt-3"><div class="card-body">
+  <div class="d-flex justify-content-between align-items-center mb-2">
+    <h2 class="h6 text-uppercase text-muted mb-0">Recent print jobs</h2>
+    <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('printing.queue') }}">All jobs</a>
+  </div>
+  <p class="small text-muted mb-2">{{ jobs_waiting }} waiting or in progress · <a href="{{ url_for('printing.attention') }}">{{ jobs_attention }} failed or need checking</a></p>
+  {% if recent_jobs %}
+  <ul class="list-unstyled mb-0">
+    {% for j in recent_jobs %}
+    <li class="d-flex justify-content-between align-items-center py-1 border-top">
+      <a href="{{ url_for('printing.detail', public_id=j.public_id) }}" class="text-break">{{ j.converted_file.document.original_filename }}</a>
+      {{ job_badge(j.status.value, job_labels) }}
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}<p class="mb-0">No print jobs yet.</p>{% endif %}
+  <p class="small text-muted mb-0 mt-2">"Sent to printer" means Windows accepted the job. It does not prove that paper came out.</p>
+</div></div>
+{% endblock %}
