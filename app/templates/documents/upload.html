@@ -8,25 +8,40 @@
       <form method="post" enctype="multipart/form-data" novalidate>
         {{ form.hidden_tag() }}
         <div class="mb-3">
-          <label class="form-label" for="file">Document</label>
-          <input class="form-control" type="file" id="file" name="file" required
-                 accept="{% for e in extensions %}.{{ e }}{{ ',' if not loop.last }}{% endfor %}">
-          <div class="form-text">Word (.docx), Excel (.xlsx) or image (.jpg, .jpeg, .png). Maximum {{ max_mb }} MB.</div>
+          <span class="form-label d-block">Document</span>
+          <div class="dropzone" id="dropzone" data-extensions="{{ extensions | join(',') }}" data-max-mb="{{ max_mb }}">
+            <input class="dropzone-input" type="file" id="file" name="file" required
+                   accept="{% for e in extensions %}.{{ e }}{{ ',' if not loop.last }}{% endfor %}">
+            <label class="dropzone-label" for="file" id="dropzone-prompt">
+              <span class="dropzone-icon" aria-hidden="true">&#8593;</span>
+              <strong>Drag and drop your file here</strong>
+              <span>or <u>browse</u> from your computer</span>
+            </label>
+            <div class="dropzone-file" id="dropzone-file" hidden>
+              <span class="dropzone-file-name" id="dropzone-name"></span>
+              <span class="dropzone-file-size" id="dropzone-size"></span>
+              <button type="button" class="dropzone-clear" id="dropzone-clear" aria-label="Remove selected file">&times;</button>
+            </div>
+          </div>
+          <div class="form-text">Word (.docx), Excel (.xlsx), PDF (.pdf) or image (.jpg, .jpeg, .png). Maximum {{ max_mb }} MB.</div>
+          <div class="text-danger small mt-1" id="dropzone-error" role="alert" hidden></div>
         </div>
-        <button class="btn btn-primary">Upload and convert to PDF</button>
+        <button class="btn btn-primary" id="upload-submit">Upload for printing</button>
       </form>
     </div></div>
   </div>
   <div class="col-lg-6">
     <div class="card"><div class="card-body">
       <h2 class="h6">Before you print</h2>
-      <p class="small mb-2">Conversion is done by Sesh, not by Microsoft Office, so layout can differ from what you see in Word or Excel. Always check the preview before printing.</p>
+      <p class="small mb-2">Word, Excel and image files are converted to PDF by Sesh, not by Microsoft Office, so layout can differ from what you see in Word or Excel. Always check the preview before printing.</p>
       <ul class="small mb-0">
+        <li>PDFs are print-ready and uploaded as-is. Nothing is converted, so what you see in the preview is what prints.</li>
         <li>Word: page breaks may move; text boxes, shapes, charts and columns are not reproduced.</li>
         <li>Excel: formulas show their last saved result; charts and images are skipped; very wide sheets are shrunk to fit the page width.</li>
-        <li>Old .doc/.xls files and password-protected files are not supported.</li>
+        <li>Old .doc/.xls files and password-protected files (including PDFs) are not supported.</li>
       </ul>
     </div></div>
   </div>
 </div>
 {% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='upload.js') }}"></script>{% endblock %}

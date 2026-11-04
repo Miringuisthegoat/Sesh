@@ -191,14 +191,14 @@ def test_list_pagination_and_empty_state(app, acme):
     up(c, "a.png", make_png())
     up(c, "b.xlsx", make_xlsx())
     body = c.get("/documents/").data
-    assert b"a.png" in body and b"b.xlsx" in body and b"Waiting to convert" in body
+    assert b"a.png" in body and b"b.xlsx" in body and b"Waiting to prepare" in body
 
 
 def test_dashboard_shows_recent_documents(app, acme):
     c = client_for(app, "worker@acme-corp.com")
     up(c, "recent-one.docx")
     body = c.get("/").data
-    assert b"recent-one.docx" in body and b"1 converting or waiting" in body
+    assert b"recent-one.docx" in body and b"1 being prepared or waiting" in body
 
 
 def test_csrf_enforced_on_upload_when_enabled(app, acme):

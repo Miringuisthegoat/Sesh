@@ -32,6 +32,7 @@ class Document(PublicIdMixin, TimestampMixin, db.Model):
     error_code = mapped_column(sa.String(64))
     error_message = mapped_column(sa.String(500))
     deleted_at = mapped_column(sa.DateTime(timezone=True))  # soft delete; retention job purges files later
+    purged_at = mapped_column(sa.DateTime(timezone=True))   # stored files deleted by the retention purge (rows are kept)
 
     uploader = relationship("User")
     converted_files = relationship("ConvertedFile", back_populates="document", order_by="ConvertedFile.attempt")

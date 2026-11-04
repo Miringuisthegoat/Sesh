@@ -11,7 +11,10 @@ PW = "correct-horse-battery"
 
 @pytest.fixture()
 def app(tmp_path):
-    app = create_app(TestingConfig, overrides={"STORAGE_LOCAL_PATH": str(tmp_path / "storage")})
+    app = create_app(TestingConfig, overrides={
+        "STORAGE_LOCAL_PATH": str(tmp_path / "storage"),
+        "ALLOWED_EXTENSIONS": ("docx", "xlsx", "jpg", "jpeg", "png", "pdf"),
+    })
     with app.app_context():
         db.create_all()
         yield app

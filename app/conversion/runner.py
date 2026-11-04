@@ -1,6 +1,7 @@
 """Run the right converter for a validated source file and verify the PDF it produced."""
 from __future__ import annotations
 
+import shutil
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -10,7 +11,14 @@ from .engine.converters.xlsx_conv import convert_xlsx
 from .engine.errors import ConversionError
 from .validation import PdfInfo, validate_pdf, validate_source
 
-CONVERTERS = {"docx": convert_docx, "xlsx": convert_xlsx, "jpg": convert_image, "jpeg": convert_image, "png": convert_image}
+
+def convert_pdf(src: Path, dst: Path) -> list[str]:
+    shutil.copyfile(src, dst)
+    return []
+
+
+CONVERTERS = {"docx": convert_docx, "xlsx": convert_xlsx, "jpg": convert_image, "jpeg": convert_image, "png": convert_image,
+              "pdf": convert_pdf}
 
 
 @dataclass

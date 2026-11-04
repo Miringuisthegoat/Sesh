@@ -46,7 +46,7 @@
       {% endif %}
     </div></div>
     {% if pdf.warnings %}
-    <div class="alert alert-warning"><strong>Conversion notes</strong>: the PDF may differ from the original.
+    <div class="alert alert-warning"><strong>Preparation notes</strong>: the PDF may differ from the uploaded document.
       <ul class="mb-0 small">{% for w in pdf.warnings %}<li>{{ w }}</li>{% endfor %}</ul></div>
     {% endif %}
     <p class="small text-muted">{{ pdf.page_count }} page{{ 's' if pdf.page_count != 1 }}. <a href="{{ url_for('documents.detail', public_id=doc.public_id) }}">Review the preview</a> before printing.</p>

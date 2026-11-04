@@ -9,7 +9,7 @@ from app.models import ConvertedFile, Document, DocumentStatus
 from app.services.documents import sanitize_filename
 from app.services.storage import get_storage
 from tests.conftest import login
-from tests.factories import OLE_HEADER, make_docx, make_jpg, make_png, make_xlsx, make_zip_bomb
+from tests.factories import OLE_HEADER, make_docx, make_jpg, make_pdf, make_png, make_xlsx, make_zip_bomb
 
 
 def upload(client, name, data, mimetype=None):
@@ -24,7 +24,7 @@ def worker_client(client, acme):
 
 
 @pytest.mark.parametrize("name,data", [("a.docx", make_docx()), ("b.xlsx", make_xlsx()), ("c.png", make_png()),
-                                        ("d.jpg", make_jpg()), ("e.JPEG", make_jpg())])
+                                        ("d.jpg", make_jpg()), ("e.JPEG", make_jpg()), ("f.pdf", make_pdf())])
 def test_supported_files_accepted_and_queued(worker_client, name, data):
     r = upload(worker_client, name, data)
     assert r.status_code == 302 and "/documents/" in r.headers["Location"]
@@ -37,7 +37,7 @@ def test_supported_files_accepted_and_queued(worker_client, name, data):
 
 
 @pytest.mark.parametrize("name,data,mime", [
-    ("a.exe", b"MZ\x90\x00", None), ("b.doc", OLE_HEADER, None), ("c.pdf", b"%PDF-1.4", None), ("d.pptx", make_docx(), None),
+    ("a.exe", b"MZ\x90\x00", None), ("b.doc", OLE_HEADER, None), ("d.pptx", make_docx(), None),
     ("noext", make_docx(), None), ("e.docx", make_png(), None), ("f.png", make_docx(), None), ("g.docx", b"just text", None),
     ("h.docx", b"", None), ("i.xlsx", make_docx(), None), ("j.docx", make_docx(), "image/png"),
 ])
@@ -51,6 +51,11 @@ def test_rejected_files(worker_client, name, data, mime):
 def test_ole_container_is_reported_as_password_protected(worker_client):
     r = upload(worker_client, "locked.docx", OLE_HEADER)
     assert b"password-protected" in r.data and db.session.scalar(db.select(Document)) is None
+
+
+def test_encrypted_pdf_is_rejected(worker_client):
+    r = upload(worker_client, "locked.pdf", make_pdf(encrypted=True))
+    assert r.status_code == 200 and db.session.scalar(db.select(Document)) is None
 
 
 def test_zip_bomb_rejected(worker_client):
@@ -76,6 +81,14 @@ def test_too_large_upload_rejected(app, client, acme):
 def test_no_file_rejected(worker_client):
     r = worker_client.post("/documents/upload", data={}, content_type="multipart/form-data")
     assert r.status_code == 200 and db.session.scalar(db.select(Document)) is None
+
+
+def test_upload_page_explains_pdf_and_drag_drop(worker_client):
+    r = worker_client.get("/documents/upload")
+    assert r.status_code == 200
+    assert b"Drag and drop your file here" in r.data
+    assert b"PDFs are print-ready and uploaded as-is." in r.data
+    assert b"Upload for printing" in r.data
 
 
 def test_hostile_filename_is_sanitised_and_never_used_as_key(worker_client):

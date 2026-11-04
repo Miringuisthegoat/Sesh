@@ -36,7 +36,7 @@
 
 {% if doc.status.value == 'FAILED' %}
 <div class="alert alert-danger">
-  <strong>Conversion failed.</strong> {{ doc.error_message or 'The document could not be converted.' }}
+  <strong>Document preparation failed.</strong> {{ doc.error_message or 'The document could not be prepared for printing.' }}
   {% if last and last.retryable and can_modify %}
   <form method="post" action="{{ url_for('documents.retry', public_id=doc.public_id) }}" class="mt-2">{{ form.hidden_tag() }}<button class="btn btn-sm btn-danger">Try again</button></form>
   {% else %}
@@ -47,7 +47,7 @@
 
 {% if pdf %}
   {% if pdf.warnings %}
-  <div class="alert alert-warning"><strong>Conversion notes</strong> — this PDF may differ from the original:
+  <div class="alert alert-warning"><strong>Preparation notes</strong> — this PDF may differ from the uploaded document:
     <ul class="mb-0 small">{% for w in pdf.warnings %}<li>{{ w }}</li>{% endfor %}</ul></div>
   {% endif %}
   <h2 class="h5">Preview</h2>

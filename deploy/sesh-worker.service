@@ -1,0 +1,23 @@
+[Unit]
+Description=Sesh conversion worker
+After=network.target postgresql.service
+
+[Service]
+User=sesh
+Group=sesh
+WorkingDirectory=/opt/sesh
+EnvironmentFile=/etc/sesh/sesh.env
+ExecStart=/opt/sesh/.venv/bin/python -m flask run-worker
+Restart=always
+RestartSec=3
+# A hostile or huge document must not take the server down: the kernel stops the worker and the lease recovery
+# (CONVERSION_LEASE_SECONDS) then retries or fails the attempt.
+MemoryMax=1500M
+TasksMax=200
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target

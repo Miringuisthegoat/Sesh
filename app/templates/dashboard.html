@@ -13,9 +13,6 @@
       <a class="btn btn-quiet" href="{{ url_for('printing.queue') }}">View print jobs</a>
     </div>
   </div>
-  <div class="welcome-emblem" aria-hidden="true">
-    <img src="{{ url_for('static', filename='images/seshat-logo.webp') }}" alt="">
-  </div>
 </section>
 
 <section class="dashboard-section" aria-labelledby="office-status-heading">
@@ -57,7 +54,7 @@
         {% set printer_state = printer.availability.value %}
         <span class="state-line">
           <span class="state-dot {{ 'state-good' if printer_state == 'AVAILABLE' else 'state-warning' if printer_state in ['OFFLINE', 'ERROR'] else 'state-pending' }}"></span>
-          Windows reports {{ {'AVAILABLE':'available','OFFLINE':'offline','ERROR':'needs attention','UNKNOWN':'status unknown'}[printer_state] }}
+          Windows reports: {{ {'AVAILABLE':'no problem','OFFLINE':'offline','ERROR':'needs attention','UNKNOWN':'status unknown'}[printer_state] }} (a hint only, shown separately from the computer's connection)
         </span>
       {% else %}
         <strong class="status-card-value">No printer selected</strong>
@@ -73,6 +70,7 @@
   <div><span>Print jobs</span><strong>{{ stats.jobs_total }}</strong></div>
   <div><span>Need attention</span><strong>{{ stats.jobs_attention }}</strong></div>
 </section>
+<p class="panel-note">{{ stats.jobs_total }} print job{{ 's' if stats.jobs_total != 1 }} in total · {{ stats.jobs_attention }} failed or uncertain</p>
 {% endif %}
 
 <div class="dashboard-columns">
@@ -81,7 +79,7 @@
       <div><p class="eyebrow">DOCUMENTS</p><h2 id="recent-documents-heading">Recent documents</h2></div>
       <a class="text-link" href="{{ url_for('documents.index') }}">See all</a>
     </div>
-    <p class="panel-note">{{ in_progress }} converting or waiting · {{ failed }} failed</p>
+    <p class="panel-note">{{ in_progress }} being prepared or waiting · {{ failed }} need attention</p>
     {% if recent %}
     <div class="table-responsive">
       <table class="table align-middle mb-0">
@@ -93,7 +91,7 @@
               <a class="file-link" href="{{ url_for('documents.detail', public_id=d.public_id) }}">{{ d.original_filename }}</a>
               <span class="table-subline">{{ d.source_type | upper }} · {{ (d.size_bytes / 1024) | round(0) | int }} KB</span>
             </td>
-            <td>{{ badge(d.status.value, {'UPLOADED':'Uploaded','QUEUED':'Waiting to convert','PROCESSING':'Converting','CONVERTED':'Ready','FAILED':'Failed'}) }}</td>
+            <td>{{ badge(d.status.value, {'UPLOADED':'Uploaded','QUEUED':'Waiting to prepare','PROCESSING':'Preparing','CONVERTED':'Ready','FAILED':'Failed'}) }}</td>
             <td class="table-date">{{ d.created_at.strftime('%b %d, %Y') }}</td>
           </tr>
         {% endfor %}
@@ -103,7 +101,7 @@
     {% else %}
     <div class="empty-state">
       <strong>No documents yet</strong>
-      <span>Upload a file to start a conversion.</span>
+      <span>Upload a document to prepare it for printing.</span>
       <a href="{{ url_for('documents.upload') }}">Upload your first document</a>
     </div>
     {% endif %}
@@ -133,7 +131,7 @@
     {% else %}
     <div class="empty-state">
       <strong>No print jobs yet</strong>
-      <span>Print a converted document when it is ready.</span>
+      <span>Print a document when it is ready.</span>
       <a href="{{ url_for('documents.index') }}">Browse documents</a>
     </div>
     {% endif %}

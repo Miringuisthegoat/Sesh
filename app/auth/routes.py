@@ -10,8 +10,8 @@ from ..models import User
 from ..models.base import utcnow
 from ..services.audit import audit
 from ..services.errors import ServiceError
-from ..services.users import company_exists, create_company_with_admin
-from .forms import LoginForm, SetupForm
+from ..services.users import change_own_password, company_exists, create_company_with_admin
+from .forms import ChangePasswordForm, LoginForm, SetupForm
 
 bp = Blueprint("auth", __name__)
 _DUMMY_HASH = generate_password_hash("not-a-real-password")  # equalises timing for unknown emails
@@ -85,3 +85,20 @@ def setup():
             flash("Company created. Sign in with your new administrator account.", "success")
             return redirect(url_for("auth.login"))
     return render_template("auth/setup.html", form=form)
+
+
+@bp.route("/account/password", methods=["GET", "POST"])
+@login_required
+@limiter.limit(_login_limit, methods=["POST"])
+def change_password():
+    form = ChangePasswordForm()
+    if form.validate_on_submit():
+        try:
+            change_own_password(current_user, form.current.data, form.password.data)
+            db.session.commit()
+            flash("Your password was changed.", "success")
+            return redirect(url_for("dashboard.index"))
+        except ServiceError as e:
+            db.session.rollback()
+            flash(str(e), "danger")
+    return render_template("auth/password.html", form=form)

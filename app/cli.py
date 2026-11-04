@@ -39,6 +39,21 @@ def run_worker_cmd(once, poll):
     click.echo(f"Processed {n} conversion(s).")
 
 
+@click.command("purge-expired")
+@click.option("--dry-run", is_flag=True, help="Show what would be removed without changing anything.")
+@with_appcontext
+def purge_expired_cmd(dry_run):
+    """Delete stored files of documents older than the company's retention period (rows and audit log are kept)."""
+    from .services.retention import purge_expired
+    r = purge_expired(dry_run=dry_run)
+    click.echo(f"{'Would purge' if dry_run else 'Purged'} {r['documents']} document(s) ({r['objects']} stored file(s)); "
+               f"skipped {r['skipped']} still in use; {r['errors']} error(s); "
+               f"{'would remove' if dry_run else 'removed'} {r['agent_events']} old agent event(s).")
+    if r["errors"]:
+        raise SystemExit(1)
+
+
 def register_cli(app):
     app.cli.add_command(create_company)
     app.cli.add_command(run_worker_cmd)
+    app.cli.add_command(purge_expired_cmd)

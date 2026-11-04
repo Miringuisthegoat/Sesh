@@ -14,6 +14,7 @@ from .engine.errors import ConversionError
 SUPPORTED = {
     "docx": ("application/vnd.openxmlformats-officedocument.wordprocessingml.document", "word/document.xml"),
     "xlsx": ("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "xl/workbook.xml"),
+    "pdf": ("application/pdf", None),
     "jpg": ("image/jpeg", None), "jpeg": ("image/jpeg", None), "png": ("image/png", None),
 }
 # Browsers often send a generic type; anything else that contradicts the extension is rejected.
@@ -92,18 +93,45 @@ def _validate_image(path: Path, ext: str, max_pixels: int) -> None:
         raise ConversionError("IMAGE_MALFORMED", "The image file is corrupt or not a valid image.") from e
 
 
+MAX_PDF_PAGES = 300
+
+
+def _validate_pdf_source(path: Path) -> None:
+    """A PDF upload is printed as-is, so it must be a readable, unencrypted PDF with a sane page count."""
+    with open(path, "rb") as f:
+        head = f.read(5)
+    if head != b"%PDF-":  # the agent checks the same signature before printing
+        raise ConversionError("PDF_MALFORMED", "The file is not a valid PDF.")
+    try:
+        r = PdfReader(str(path), strict=False)
+        if r.is_encrypted:
+            raise ConversionError("PDF_ENCRYPTED", "This PDF is password-protected. Remove the password and upload it again.")
+        pages = len(r.pages)
+        if pages < 1:
+            raise ConversionError("PDF_MALFORMED", "The PDF has no pages.")
+        if pages > MAX_PDF_PAGES:
+            raise ConversionError("PDF_TOO_LARGE", f"The PDF has {pages} pages. The limit is {MAX_PDF_PAGES}.")
+        r.pages[0].mediabox  # forces a real parse of the first page
+    except ConversionError:
+        raise
+    except Exception as e:
+        raise ConversionError("PDF_MALFORMED", "The PDF is corrupt or could not be read.") from e
+
+
 def validate_source(path: Path, ext: str, *, max_bytes: int, max_pixels: int = 50_000_000) -> SourceInfo:
     """Raises ConversionError (user-safe message, stable code) if the file is not an acceptable source document."""
     ext = ext.lower()
     if ext not in SUPPORTED:
-        raise ConversionError("UNSUPPORTED_TYPE", f"'.{ext}' files are not supported. Use .docx, .xlsx, .jpg, .jpeg or .png.")
+        raise ConversionError("UNSUPPORTED_TYPE", f"'.{ext}' files are not supported. Use .docx, .xlsx, .jpg, .jpeg, .png or .pdf.")
     size = path.stat().st_size
     if size == 0:
         raise ConversionError("EMPTY_FILE", "The file is empty.")
     if size > max_bytes:
         raise ConversionError("FILE_TOO_LARGE", f"The file is larger than the {max_bytes // (1024 * 1024)} MB limit.")
     mime, required = SUPPORTED[ext]
-    if required:
+    if ext == "pdf":
+        _validate_pdf_source(path)
+    elif required:
         _validate_zip(path, ext, required)
     else:
         _validate_image(path, ext, max_pixels)
@@ -131,5 +159,5 @@ def validate_pdf(path: Path) -> PdfInfo:
             raise ValueError("no pages")
         r.pages[0].mediabox  # forces a real parse of the first page
     except Exception as e:
-        raise ConversionError("OUTPUT_INVALID", "The converted PDF could not be verified. Please try again.", retryable=True) from e
+        raise ConversionError("OUTPUT_INVALID", "The PDF could not be verified. Please try again.", retryable=True) from e
     return PdfInfo(pages=pages, size=path.stat().st_size, sha256=sha256_file(path))

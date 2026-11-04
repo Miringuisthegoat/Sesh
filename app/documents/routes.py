@@ -15,7 +15,7 @@ from ..services.storage import StorageError, get_storage
 from . import bp
 from .forms import CsrfOnlyForm
 
-STATUS_LABELS = {"UPLOADED": "Uploaded", "QUEUED": "Waiting to convert", "PROCESSING": "Converting",
+STATUS_LABELS = {"UPLOADED": "Uploaded", "QUEUED": "Waiting to prepare", "PROCESSING": "Preparing",
                  "CONVERTED": "Ready", "FAILED": "Failed"}
 
 
@@ -41,7 +41,7 @@ def upload():
     if request.method == "POST" and form.validate_on_submit():
         try:
             doc = ingest_upload(request.files.get("file"), current_user)
-            flash("Upload received. Conversion to PDF has started.", "success")
+            flash("Upload received. Your document is being prepared for printing.", "success")
             return redirect(url_for("documents.detail", public_id=doc.public_id))
         except ServiceError as e:
             flash(str(e), "danger")

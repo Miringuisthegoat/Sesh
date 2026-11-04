@@ -1,0 +1,10 @@
+[Unit]
+Description=Sesh retention purge and cleanup
+After=postgresql.service
+
+[Service]
+Type=oneshot
+User=sesh
+WorkingDirectory=/opt/sesh
+EnvironmentFile=/etc/sesh/sesh.env
+ExecStart=/opt/sesh/.venv/bin/python -m flask purge-expired

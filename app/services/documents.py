@@ -13,7 +13,7 @@ from flask import abort, current_app
 from sqlalchemy import select
 
 from ..conversion.engine.errors import ConversionError
-from ..conversion.validation import mime_acceptable, validate_source
+from ..conversion.validation import SUPPORTED, mime_acceptable, validate_source
 from ..extensions import db
 from ..models import ConvertedFile, ConversionStatus, Document, DocumentStatus
 from .audit import audit
@@ -43,8 +43,8 @@ def sanitize_filename(raw: str | None, ext: str) -> str:
 def _extension(filename: str | None) -> str:
     ext = Path((filename or "").replace("\\", "/").split("/")[-1]).suffix.lower().lstrip(".")
     allowed = current_app.config["ALLOWED_EXTENSIONS"]
-    if not ext or ext not in allowed:
-        raise ServiceError("This file type is not supported. Upload a .docx, .xlsx, .jpg, .jpeg or .png file.")
+    if not ext or ext not in allowed or ext not in SUPPORTED:
+        raise ServiceError("This file type is not supported. Upload a .docx, .xlsx, .jpg, .jpeg, .png or .pdf file.")
     return ext
 
 

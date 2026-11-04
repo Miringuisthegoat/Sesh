@@ -50,6 +50,8 @@ def create_app(config_object=None, overrides: dict | None = None) -> Flask:
     app.register_blueprint(admin_bp)
     app.register_blueprint(agents_bp)
     app.register_blueprint(printing_bp)
+    from .health import bp as health_bp
+    app.register_blueprint(health_bp)
     csrf.exempt(agents_bp)  # machine API: bearer credential, no cookies
     from .services.agents import is_online
     app.jinja_env.globals["agent_online"] = is_online
@@ -63,7 +65,7 @@ def create_app(config_object=None, overrides: dict | None = None) -> Flask:
         resp.headers.setdefault("X-Frame-Options", "DENY")
         resp.headers.setdefault("Referrer-Policy", "same-origin")
         resp.headers.setdefault("Content-Security-Policy",
-                                "default-src 'self'; style-src 'self' https://cdn.jsdelivr.net; script-src 'self' https://cdn.jsdelivr.net; "
+                                "default-src 'self'; style-src 'self'; script-src 'self'; "
                                 "img-src 'self' data:; frame-ancestors 'none'; form-action 'self'")
         if app.config["ENVIRONMENT"] == "production":
             resp.headers.setdefault("Strict-Transport-Security", "max-age=31536000; includeSubDomains")

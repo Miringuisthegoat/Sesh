@@ -13,7 +13,7 @@ from app.services import conversion_queue as cq
 from app.services.documents import ingest_upload
 from app.services.storage import get_storage
 from tests.conftest import login
-from tests.factories import make_docx, make_jpg, make_png, make_xlsx
+from tests.factories import make_docx, make_jpg, make_pdf, make_png, make_xlsx
 
 
 class FakeUpload:
@@ -30,7 +30,7 @@ def attempts(doc):
 
 
 @pytest.mark.parametrize("name,data,min_pages", [("a.docx", make_docx(table=True), 1), ("b.xlsx", make_xlsx(), 1),
-                                                  ("c.png", make_png(), 1), ("d.jpg", make_jpg(), 1)])
+                                                  ("c.png", make_png(), 1), ("d.jpg", make_jpg(), 1), ("e.pdf", make_pdf(), 1)])
 def test_conversion_produces_valid_stored_pdf(acme, name, data, min_pages):
     _, _, worker = acme
     doc = add_doc(worker, name, data)
@@ -40,6 +40,8 @@ def test_conversion_produces_valid_stored_pdf(acme, name, data, min_pages):
     assert doc.status == DocumentStatus.CONVERTED and cf.status == ConversionStatus.SUCCEEDED
     pdf = get_storage().read_bytes(cf.storage_key)
     assert pdf.startswith(b"%PDF-") and hashlib.sha256(pdf).hexdigest() == cf.sha256 and cf.size_bytes == len(pdf)
+    if name.endswith(".pdf"):
+        assert pdf == data and cf.warnings is None
     assert len(PdfReader(io.BytesIO(pdf)).pages) == cf.page_count >= min_pages
     assert cf.storage_key.startswith("converted/") and cf.storage_key != doc.storage_key
 

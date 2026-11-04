@@ -1,7 +1,7 @@
 # Sesh: remote document conversion & printing (MVP)
 
-Status: Phase 3 (document workflow). Working now: setup, sign-in, roles, worker management, company settings, office setup, audit log, uploads, private storage, background PDF conversion, PDF preview/download.
-Not built yet (so not shown as working): Windows agent, print jobs. `poc/` holds the Phase 1 conversion/print experiment.
+Status: Phase 7 (hardening and pilot readiness). Working now: setup, sign-in, roles, worker management, company settings, office setup, audit log, uploads, private storage, background PDF conversion, PDF preview/download.
+Also built: Windows agent, print jobs, retention purge, health check, password change. NOT yet verified on real hardware: printing and the installer on clean Windows (see docs/PILOT_CHECKLIST.md). `poc/` holds the Phase 1 conversion/print experiment.
 
 ## Local development (Windows PowerShell, VS Code)
 ```powershell
@@ -40,3 +40,9 @@ After changing models: `python -m flask db migrate -m "describe change"`, REVIEW
 ## Security notes (current)
 Scrypt password hashes · CSRF on every POST · HttpOnly + SameSite=Lax cookies (Secure in production) · login/setup rate limit (memory store in dev; set RATELIMIT_STORAGE_URI to Redis in production) · server-side role checks · every company-owned lookup filtered by company_id · audit log for sign-ins and admin changes (never passwords) · production refuses to start with the default SECRET_KEY.
 Known gaps (later phases): Bootstrap loads from a CDN; no account lockout beyond rate limiting; no password-change page for workers yet (admins reset passwords); no email-based reset.
+
+
+## Operations (Phase 7)
+Deploy: `docs/DEPLOYMENT.md` (files in `deploy/`). Backups: `docs/BACKUP_RESTORE.md`. Problems: `docs/TROUBLESHOOTING.md`.
+Before a pilot: `docs/SECURITY_REVIEW.md` and `docs/PILOT_CHECKLIST.md`. Daily maintenance: `python -m flask purge-expired` (`--dry-run` first).
+Health probe: `GET /healthz`. Performance guide: `python -m scripts.perf_check`.

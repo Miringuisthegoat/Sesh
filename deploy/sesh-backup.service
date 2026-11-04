@@ -1,0 +1,8 @@
+[Unit]
+Description=Sesh database backup
+
+[Service]
+Type=oneshot
+User=sesh
+EnvironmentFile=/etc/sesh/backup.env
+ExecStart=/opt/sesh/deploy/backup.sh

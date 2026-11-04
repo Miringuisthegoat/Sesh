@@ -47,8 +47,23 @@ def _new_credential() -> tuple[str, str, str]:
 
 # ---- admin side -----------------------------------------------------------------------------------------------------
 
+def _expire_stale_enrollments(office) -> None:
+    """A never-used enrolment whose token has expired must not hold the office's single agent slot forever."""
+    now = utcnow()
+    for a in db.session.scalars(select(Agent).where(Agent.office_id == office.id, Agent.status == AgentStatus.PENDING)).all():
+        exp = _aware(a.enrollment_expires_at)
+        if exp is not None and exp < now:
+            a.status = AgentStatus.REVOKED
+            a.revoked_at = now
+            a.enrollment_token_hash = a.enrollment_expires_at = None
+            _event(a, "ENROLLMENT_EXPIRED", "Enrolment token expired before it was used.")
+            audit("agent.enrollment_expired", company_id=a.company_id, target_type="agent", target_id=a.public_id)
+    db.session.flush()
+
+
 def create_enrollment(office, *, name: str | None, actor) -> tuple[Agent, str]:
     """Create a PENDING agent and a single-use enrolment token (returned once, never stored in clear)."""
+    _expire_stale_enrollments(office)
     ensure_can_add_agent(office)
     token = "se_" + secrets.token_urlsafe(24)
     agent = Agent(company_id=office.company_id, office_id=office.id, name=(name or "Office computer")[:150],

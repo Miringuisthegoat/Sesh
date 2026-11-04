@@ -49,7 +49,7 @@ class Config:
     PASSWORD_MIN_LENGTH = _int("PASSWORD_MIN_LENGTH", 10)
     MAX_UPLOAD_MB = _int("MAX_UPLOAD_MB", 25)
     MAX_CONTENT_LENGTH = MAX_UPLOAD_MB * 1024 * 1024
-    ALLOWED_EXTENSIONS = tuple(e.strip().lower() for e in os.environ.get("ALLOWED_EXTENSIONS", "docx,xlsx,jpg,jpeg,png").split(","))
+    ALLOWED_EXTENSIONS = tuple(e.strip().lower() for e in os.environ.get("ALLOWED_EXTENSIONS", "docx,xlsx,jpg,jpeg,png,pdf").split(","))
     RETENTION_DAYS_DEFAULT = _int("RETENTION_DAYS_DEFAULT", 90)
     MAX_COPIES_LIMIT = _int("MAX_COPIES_LIMIT", 20)  # hard ceiling for any company setting
 
@@ -67,6 +67,7 @@ class Config:
     MAX_CONVERSION_RETRIES = _int("MAX_CONVERSION_RETRIES", 3)
     MAX_JOB_ATTEMPTS = _int("MAX_JOB_ATTEMPTS", 3)  # claims of one print job before it is failed as AGENT_LOST
     MAX_PENDING_JOBS_PER_USER = _int("MAX_PENDING_JOBS_PER_USER", 20)
+    AGENT_EVENT_RETENTION_DAYS = _int("AGENT_EVENT_RETENTION_DAYS", 30)  # old agent connection events are pruned
 
     # Storage / queue (used from Phase 3)
     STORAGE_BACKEND = os.environ.get("STORAGE_BACKEND", "local")

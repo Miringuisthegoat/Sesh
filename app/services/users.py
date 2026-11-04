@@ -77,3 +77,14 @@ def create_company_with_admin(*, company_name: str, admin_name: str, email: str,
 
 def company_exists() -> bool:
     return db.session.scalar(select(func.count(Company.id))) > 0
+
+
+def change_own_password(user: User, current_password: str, new_password: str) -> None:
+    """Self-service change. Caller commits. Never log either password."""
+    if not user.check_password(current_password or ""):
+        raise ServiceError("Your current password is not correct.")
+    if current_password == new_password:
+        raise ServiceError("Choose a password that is different from the current one.")
+    validate_password(new_password, user.email)
+    user.set_password(new_password)
+    audit("user.password_changed", actor=user, target_type="user", target_id=user.public_id)

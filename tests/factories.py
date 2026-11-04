@@ -5,6 +5,7 @@ import zipfile
 import openpyxl
 from docx import Document as Docx
 from PIL import Image
+from pypdf import PdfWriter
 
 
 def make_docx(paragraphs=("Hello from Sesh",), table=False) -> bytes:
@@ -40,6 +41,16 @@ def make_png(size=(120, 80)) -> bytes:
 def make_jpg(size=(120, 80)) -> bytes:
     buf = io.BytesIO()
     Image.new("RGB", size, "teal").save(buf, "JPEG")
+    return buf.getvalue()
+
+
+def make_pdf(*, encrypted: bool = False) -> bytes:
+    writer = PdfWriter()
+    writer.add_blank_page(width=612, height=792)
+    if encrypted:
+        writer.encrypt("test-password")
+    buf = io.BytesIO()
+    writer.write(buf)
     return buf.getvalue()
 
 
