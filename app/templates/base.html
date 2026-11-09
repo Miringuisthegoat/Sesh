@@ -11,6 +11,31 @@
 </head>
 <body class="{{ 'sesh-app-page' if current_user.is_authenticated else 'sesh-auth-page' }}">
 {% set endpoint = request.endpoint or '' %}
+{% macro nav_icon(name) -%}
+<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+  {% if name == 'dashboard' %}
+  <rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/>
+  {% elif name == 'document' %}
+  <path d="M6.5 3.5h7l4 4V20a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 5.5 20V5A1.5 1.5 0 0 1 7 3.5Z"/><path d="M13.5 3.5V8h4"/><path d="M9 12h6M9 15.5h6"/>
+  {% elif name == 'upload' %}
+  <path d="M12 15.5V4.5"/><path d="m8.5 8 3.5-3.5L15.5 8"/><path d="M5 15.5v3A2 2 0 0 0 7 20.5h10a2 2 0 0 0 2-2v-3"/>
+  {% elif name == 'printer' %}
+  <path d="M7 8V3.5h10V8"/><path d="M6.5 18.5H5A2.5 2.5 0 0 1 2.5 16v-5A2.5 2.5 0 0 1 5 8.5h14a2.5 2.5 0 0 1 2.5 2.5v5a2.5 2.5 0 0 1-2.5 2.5h-1.5"/><path d="M7 14h10v6.5H7z"/><path d="M17.5 11.5h.01"/>
+  {% elif name == 'worker' %}
+  <path d="M7.5 8.5a4.5 4.5 0 0 1 9 0v1h-9z"/><path d="M6.5 9.5h11M12 4v3"/><path d="M9 13.5V15l3 2 3-2v-1.5"/><path d="M4 21a8 8 0 0 1 16 0"/>
+  {% elif name == 'settings' %}
+  <path d="M4 6h6m4 0h6M4 12h2m4 0h10M4 18h8m4 0h4"/><circle cx="12" cy="6" r="2"/><circle cx="8" cy="12" r="2"/><circle cx="14" cy="18" r="2"/>
+  {% elif name == 'office' %}
+  <path d="M4 20.5h16M6 20.5V5l6-2v17.5M12 8h6v12.5"/><path d="M8.5 8h.01M8.5 11.5h.01M8.5 15h.01M14.5 11h1M14.5 14.5h1"/>
+  {% elif name == 'install' %}
+  <path d="M12 3.5v10"/><path d="m8.5 10 3.5 3.5 3.5-3.5"/><path d="M5 15.5v3A2 2 0 0 0 7 20.5h10a2 2 0 0 0 2-2v-3M9 20.5h6"/>
+  {% elif name == 'audit' %}
+  <rect x="5.5" y="4.5" width="13" height="16" rx="2"/><path d="M9 9h6m-6 3.5h6m-6 3.5h4"/><path d="M9 4.5v-1h6v1"/>
+  {% elif name == 'key' %}
+  <circle cx="8" cy="15" r="3"/><path d="m10.2 12.8 8.3-8.3 2 2-2 2-1.5-1.5-2 2 1.5 1.5-2 2"/>
+  {% endif %}
+</svg>
+{%- endmacro %}
 {% set page_content %}
   {% with messages = get_flashed_messages(with_categories=true) %}
     {% for category, message in messages %}
@@ -27,6 +52,9 @@
         <span class="brand-mark"><img src="{{ url_for('static', filename='images/seshat-logo.webp') }}" alt="Seshat mark"></span>
         <span class="brand-copy"><strong>Sesh</strong><small>OFFICE WORKSPACE</small></span>
       </a>
+      <button class="sidebar-expand-toggle" id="sidebarExpandToggle" type="button" aria-pressed="false" aria-label="Keep navigation expanded" title="Keep navigation expanded">
+        <span aria-hidden="true">›</span>
+      </button>
       <button type="button" class="btn-close d-lg-none" data-bs-dismiss="offcanvas" aria-label="Close navigation"></button>
     </div>
 
@@ -38,16 +66,16 @@
     <p class="sidebar-label">WORKSPACE</p>
     <nav class="sesh-nav" aria-label="Workspace">
       <a class="sesh-nav-link {{ 'is-active' if endpoint == 'dashboard.index' else '' }}" href="{{ url_for('dashboard.index') }}" aria-label="Dashboard" title="Dashboard">
-        <span class="nav-mark" aria-hidden="true">⌂</span><span>Dashboard</span>
+        <span class="nav-mark">{{ nav_icon('dashboard') }}</span><span>Dashboard</span>
       </a>
       <a class="sesh-nav-link {{ 'is-active' if endpoint in ['documents.index', 'documents.detail'] else '' }}" href="{{ url_for('documents.index') }}" aria-label="Documents" title="Documents">
-        <span class="nav-mark" aria-hidden="true">▤</span><span>Documents</span>
+        <span class="nav-mark">{{ nav_icon('document') }}</span><span>Documents</span>
       </a>
       <a class="sesh-nav-link {{ 'is-active' if endpoint == 'documents.upload' else '' }}" href="{{ url_for('documents.upload') }}" aria-label="Upload document" title="Upload document">
-        <span class="nav-mark" aria-hidden="true">⇧</span><span>Upload document</span>
+        <span class="nav-mark">{{ nav_icon('upload') }}</span><span>Upload document</span>
       </a>
       <a class="sesh-nav-link {{ 'is-active' if endpoint in ['printing.queue', 'printing.history', 'printing.attention', 'printing.new', 'printing.detail'] else '' }}" href="{{ url_for('printing.queue') }}" aria-label="Print jobs" title="Print jobs">
-        <span class="nav-mark" aria-hidden="true">▣</span><span>Print jobs</span>
+        <span class="nav-mark">{{ nav_icon('printer') }}</span><span>Print jobs</span>
       </a>
     </nav>
 
@@ -55,19 +83,19 @@
     <p class="sidebar-label sidebar-label-spaced">MANAGE</p>
     <nav class="sesh-nav" aria-label="Administration">
       <a class="sesh-nav-link {{ 'is-active' if endpoint in ['admin.workers', 'admin.worker_password'] else '' }}" href="{{ url_for('admin.workers') }}" aria-label="Workers" title="Workers">
-        <span class="nav-mark" aria-hidden="true">♙</span><span>Workers</span>
+        <span class="nav-mark">{{ nav_icon('worker') }}</span><span>Workers</span>
       </a>
       <a class="sesh-nav-link {{ 'is-active' if endpoint == 'admin.company_settings' else '' }}" href="{{ url_for('admin.company_settings') }}" aria-label="Company settings" title="Company settings">
-        <span class="nav-mark" aria-hidden="true">⚙</span><span>Company settings</span>
+        <span class="nav-mark">{{ nav_icon('settings') }}</span><span>Company settings</span>
       </a>
       <a class="sesh-nav-link {{ 'is-active' if endpoint == 'admin.office' else '' }}" href="{{ url_for('admin.office') }}" aria-label="Office and printer" title="Office and printer">
-        <span class="nav-mark" aria-hidden="true">▧</span><span>Office &amp; printer</span>
+        <span class="nav-mark">{{ nav_icon('office') }}</span><span>Office &amp; printer</span>
       </a>
       <a class="sesh-nav-link {{ 'is-active' if endpoint in ['dashboard.agent_setup'] else '' }}" href="{{ url_for('dashboard.agent_setup') }}" aria-label="Install agent" title="Install agent">
-        <span class="nav-mark" aria-hidden="true">⇩</span><span>Install agent</span>
+        <span class="nav-mark">{{ nav_icon('install') }}</span><span>Install agent</span>
       </a>
       <a class="sesh-nav-link {{ 'is-active' if endpoint == 'admin.audit_log' else '' }}" href="{{ url_for('admin.audit_log') }}" aria-label="Audit log" title="Audit log">
-        <span class="nav-mark" aria-hidden="true">◷</span><span>Audit log</span>
+        <span class="nav-mark">{{ nav_icon('audit') }}</span><span>Audit log</span>
       </a>
     </nav>
     {% endif %}
@@ -79,7 +107,7 @@
       </div>
       <nav class="sesh-nav mb-2" aria-label="Account">
         <a class="sesh-nav-link {{ 'is-active' if endpoint == 'auth.change_password' else '' }}" href="{{ url_for('auth.change_password') }}" aria-label="Change password" title="Change password">
-          <span class="nav-mark" aria-hidden="true">◇</span><span>Change password</span>
+          <span class="nav-mark">{{ nav_icon('key') }}</span><span>Change password</span>
         </a>
       </nav>
       <div class="sidebar-user">
