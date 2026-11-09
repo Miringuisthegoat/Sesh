@@ -1,6 +1,10 @@
-from flask import Blueprint, render_template
+from pathlib import Path
+
+from flask import Blueprint, abort, current_app, render_template, request, send_file
 from flask_login import current_user, login_required
 from sqlalchemy import func, select
+from ..auth.decorators import admin_required
+from ..services.audit import audit
 
 from ..extensions import db
 from ..models import Agent, AgentStatus, Printer, User, UserRole
@@ -46,3 +50,31 @@ def index():
     return render_template("dashboard.html", office=office, agent=agent, printer=printer, stats=stats,
                            recent=recent, in_progress=in_progress, failed=failed, recent_jobs=recent_jobs,
                            jobs_waiting=jobs_waiting, jobs_attention=jobs_attention, job_labels=JOB_LABELS)
+
+
+def _installer_path() -> Path | None:
+    p = Path(current_app.config["AGENT_INSTALLER_PATH"])
+    if not p.is_absolute():
+        p = Path(current_app.root_path).parent / p
+    return p if p.is_file() else None
+
+
+@bp.get("/agent")
+@admin_required
+def agent_setup():
+    installer = _installer_path()
+    office = get_company_office(current_user.company_id)
+    return render_template("agents/setup.html", office=office, server_url=request.url_root.rstrip("/"),
+                           installer_mb=round(installer.stat().st_size / 1048576, 1) if installer else None,
+                           token_hours=current_app.config["AGENT_ENROLLMENT_HOURS"])
+
+
+@bp.get("/agent/download")
+@admin_required
+def agent_download():
+    path = _installer_path()
+    if path is None:
+        abort(404)
+    audit("agent.installer_downloaded", actor=current_user)
+    db.session.commit()
+    return send_file(path, as_attachment=True, download_name="SeshAgentSetup.exe", conditional=True, max_age=0)

@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Install Sesh Agent{% endblock %}
+{% block content %}
+<section class="welcome-panel agent-welcome">
+  <div class="welcome-copy">
+    <p class="eyebrow">DEVICE SETUP</p>
+    <h1>Bring a printer online</h1>
+    <p>Install Sesh Agent on the Windows computer connected to your printer. Keep it switched on and signed in for remote printing.</p>
+    <div class="welcome-actions">
+      {% if installer_mb is not none %}
+      <a class="btn btn-primary" href="{{ url_for('dashboard.agent_download') }}">Download SeshAgentSetup.exe</a>
+      <span class="btn-quiet">{{ installer_mb }} MB · Windows 10/11</span>
+      {% else %}
+      <span class="btn-quiet">Installer not available</span>
+      {% endif %}
+    </div>
+  </div>
+</section>
+
+{% if installer_mb is none %}
+<div class="alert alert-warning mt-3 mb-0 small" role="alert">The installer is not available on this server yet. Build it with <code>.\build\build.ps1</code> and set <code>AGENT_INSTALLER_PATH</code>.</div>
+{% endif %}
+
+<section class="dashboard-section" aria-labelledby="agent-status-heading">
+  <div class="section-heading">
+    <div><p class="eyebrow">OVERVIEW</p><h2 id="agent-status-heading">Setup status</h2></div>
+    <span class="section-caption">Windows · 64-bit</span>
+  </div>
+  <div class="status-grid">
+    <article class="status-card">
+      <span class="status-card-label">INSTALLER</span>
+      <strong class="status-card-value">{{ 'Ready to download' if installer_mb is not none else 'Not configured' }}</strong>
+      <span class="status-card-note">Windows 10/11</span>
+    </article>
+    <article class="status-card">
+      <span class="status-card-label">OFFICE</span>
+      <strong class="status-card-value">{{ 'Ready for enrolment' if office else 'Needs setup' }}</strong>
+      <span class="status-card-note">{% if office %}<a href="{{ url_for('admin.office') }}">Office &amp; printer</a>{% else %}Set up the office before connecting{% endif %}</span>
+    </article>
+    <article class="status-card">
+      <span class="status-card-label">TOKEN</span>
+      <strong class="status-card-value">One-time use</strong>
+      <span class="status-card-note">Expires after {{ token_hours }} hours</span>
+    </article>
+  </div>
+</section>
+
+<section class="dashboard-section" aria-labelledby="agent-steps-heading">
+  <div class="section-heading">
+    <div><p class="eyebrow">GET CONNECTED</p><h2 id="agent-steps-heading">Installation steps</h2></div>
+    <span class="section-caption">About 5 minutes</span>
+  </div>
+  <div class="dashboard-columns agent-setup-columns">
+    <div class="content-panel">
+      <ol class="mb-0 ps-3">
+        <li class="mb-3"><strong>Download the installer</strong> for Windows 10/11, 64-bit.</li>
+        <li class="mb-3"><strong>Run it.</strong> No administrator rights are needed. The installer is not code-signed yet, so Windows SmartScreen may warn: choose <em>More info</em>, then <em>Run anyway</em>. Tick "Start Sesh Agent automatically when I sign in".</li>
+        <li class="mb-3"><strong>Generate an enrolment token</strong> on the <a href="{{ url_for('admin.office') }}">Office &amp; printer</a> page{% if not office %} (set up the office first){% endif %}. It is shown once, works one time and expires after {{ token_hours }} hours.</li>
+        <li class="mb-3"><strong>Connect.</strong> On first launch enter this server address and the token:<br>
+          <code class="user-select-all">{{ server_url }}</code></li>
+        <li><strong>Choose the printer</strong> to make available, then check the Office page shows the computer as <em>Connected</em>.</li>
+      </ol>
+    </div>
+    <aside class="content-panel agent-notes">
+      <div class="panel-heading"><h2>Good to know</h2></div>
+      <ul class="small mb-0 ps-3">
+        <li>The agent only makes outbound HTTPS connections: no router changes, VPN or public IP.</li>
+        <li>It uses printers already installed in Windows; it never installs drivers.</li>
+        <li>SumatraPDF is needed for printing and is not bundled. See <code>docs/AGENT.md</code>.</li>
+        <li>"Sent to printer" means Windows accepted the job, not that paper came out.</li>
+      </ul>
+    </aside>
+  </div>
+</section>
+{% endblock %}

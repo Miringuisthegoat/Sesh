@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#f7f6f3">
   <title>{% block title %}Sesh{% endblock %} · Sesh</title>
+  <script src="{{ url_for('static', filename='app.js') }}"></script>
   <link href="{{ url_for('static', filename='vendor/bootstrap/bootstrap.min.css') }}" rel="stylesheet">
   <link href="{{ url_for('static', filename='app.css') }}" rel="stylesheet">
 </head>
@@ -29,41 +30,44 @@
       <button type="button" class="btn-close d-lg-none" data-bs-dismiss="offcanvas" aria-label="Close navigation"></button>
     </div>
 
-    <div class="sidebar-company">
+    <div class="sidebar-company" title="{{ current_user.company.name }} workspace">
       <span class="company-monogram" aria-hidden="true">{{ current_user.company.name[:1] | upper }}</span>
       <span class="company-copy"><strong>{{ current_user.company.name }}</strong><small>Workspace</small></span>
     </div>
 
     <p class="sidebar-label">WORKSPACE</p>
     <nav class="sesh-nav" aria-label="Workspace">
-      <a class="sesh-nav-link {{ 'is-active' if endpoint == 'dashboard.index' else '' }}" href="{{ url_for('dashboard.index') }}">
-        <span class="nav-mark" aria-hidden="true"></span><span>Dashboard</span>
+      <a class="sesh-nav-link {{ 'is-active' if endpoint == 'dashboard.index' else '' }}" href="{{ url_for('dashboard.index') }}" aria-label="Dashboard" title="Dashboard">
+        <span class="nav-mark" aria-hidden="true">⌂</span><span>Dashboard</span>
       </a>
-      <a class="sesh-nav-link {{ 'is-active' if endpoint in ['documents.index', 'documents.detail'] else '' }}" href="{{ url_for('documents.index') }}">
-        <span class="nav-mark" aria-hidden="true"></span><span>Documents</span>
+      <a class="sesh-nav-link {{ 'is-active' if endpoint in ['documents.index', 'documents.detail'] else '' }}" href="{{ url_for('documents.index') }}" aria-label="Documents" title="Documents">
+        <span class="nav-mark" aria-hidden="true">▤</span><span>Documents</span>
       </a>
-      <a class="sesh-nav-link {{ 'is-active' if endpoint == 'documents.upload' else '' }}" href="{{ url_for('documents.upload') }}">
-        <span class="nav-mark" aria-hidden="true"></span><span>Upload document</span>
+      <a class="sesh-nav-link {{ 'is-active' if endpoint == 'documents.upload' else '' }}" href="{{ url_for('documents.upload') }}" aria-label="Upload document" title="Upload document">
+        <span class="nav-mark" aria-hidden="true">⇧</span><span>Upload document</span>
       </a>
-      <a class="sesh-nav-link {{ 'is-active' if endpoint in ['printing.queue', 'printing.history', 'printing.attention', 'printing.new', 'printing.detail'] else '' }}" href="{{ url_for('printing.queue') }}">
-        <span class="nav-mark" aria-hidden="true"></span><span>Print jobs</span>
+      <a class="sesh-nav-link {{ 'is-active' if endpoint in ['printing.queue', 'printing.history', 'printing.attention', 'printing.new', 'printing.detail'] else '' }}" href="{{ url_for('printing.queue') }}" aria-label="Print jobs" title="Print jobs">
+        <span class="nav-mark" aria-hidden="true">▣</span><span>Print jobs</span>
       </a>
     </nav>
 
     {% if current_user.is_admin %}
     <p class="sidebar-label sidebar-label-spaced">MANAGE</p>
     <nav class="sesh-nav" aria-label="Administration">
-      <a class="sesh-nav-link {{ 'is-active' if endpoint in ['admin.workers', 'admin.worker_password'] else '' }}" href="{{ url_for('admin.workers') }}">
-        <span class="nav-mark" aria-hidden="true"></span><span>Workers</span>
+      <a class="sesh-nav-link {{ 'is-active' if endpoint in ['admin.workers', 'admin.worker_password'] else '' }}" href="{{ url_for('admin.workers') }}" aria-label="Workers" title="Workers">
+        <span class="nav-mark" aria-hidden="true">♙</span><span>Workers</span>
       </a>
-      <a class="sesh-nav-link {{ 'is-active' if endpoint == 'admin.company_settings' else '' }}" href="{{ url_for('admin.company_settings') }}">
-        <span class="nav-mark" aria-hidden="true"></span><span>Company settings</span>
+      <a class="sesh-nav-link {{ 'is-active' if endpoint == 'admin.company_settings' else '' }}" href="{{ url_for('admin.company_settings') }}" aria-label="Company settings" title="Company settings">
+        <span class="nav-mark" aria-hidden="true">⚙</span><span>Company settings</span>
       </a>
-      <a class="sesh-nav-link {{ 'is-active' if endpoint == 'admin.office' else '' }}" href="{{ url_for('admin.office') }}">
-        <span class="nav-mark" aria-hidden="true"></span><span>Office &amp; printer</span>
+      <a class="sesh-nav-link {{ 'is-active' if endpoint == 'admin.office' else '' }}" href="{{ url_for('admin.office') }}" aria-label="Office and printer" title="Office and printer">
+        <span class="nav-mark" aria-hidden="true">▧</span><span>Office &amp; printer</span>
       </a>
-      <a class="sesh-nav-link {{ 'is-active' if endpoint == 'admin.audit_log' else '' }}" href="{{ url_for('admin.audit_log') }}">
-        <span class="nav-mark" aria-hidden="true"></span><span>Audit log</span>
+      <a class="sesh-nav-link {{ 'is-active' if endpoint in ['dashboard.agent_setup'] else '' }}" href="{{ url_for('dashboard.agent_setup') }}" aria-label="Install agent" title="Install agent">
+        <span class="nav-mark" aria-hidden="true">⇩</span><span>Install agent</span>
+      </a>
+      <a class="sesh-nav-link {{ 'is-active' if endpoint == 'admin.audit_log' else '' }}" href="{{ url_for('admin.audit_log') }}" aria-label="Audit log" title="Audit log">
+        <span class="nav-mark" aria-hidden="true">◷</span><span>Audit log</span>
       </a>
     </nav>
     {% endif %}
@@ -74,8 +78,8 @@
         <div><strong>Private by design</strong><small>Your files stay in your workspace.</small></div>
       </div>
       <nav class="sesh-nav mb-2" aria-label="Account">
-        <a class="sesh-nav-link {{ 'is-active' if endpoint == 'auth.change_password' else '' }}" href="{{ url_for('auth.change_password') }}">
-          <span class="nav-mark" aria-hidden="true"></span><span>Change password</span>
+        <a class="sesh-nav-link {{ 'is-active' if endpoint == 'auth.change_password' else '' }}" href="{{ url_for('auth.change_password') }}" aria-label="Change password" title="Change password">
+          <span class="nav-mark" aria-hidden="true">◇</span><span>Change password</span>
         </a>
       </nav>
       <div class="sidebar-user">
@@ -83,7 +87,7 @@
         <span class="sidebar-user-copy"><strong>{{ current_user.full_name }}</strong><small>{{ current_user.role.value | title }}</small></span>
         <form method="post" action="{{ url_for('auth.logout') }}">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-          <button class="signout-button" type="submit" aria-label="Sign out">Sign out</button>
+          <button class="signout-button" type="submit" aria-label="Sign out" title="Sign out">Sign out</button>
         </form>
       </div>
     </div>
@@ -98,6 +102,10 @@
         <span class="topbar-overline">Sesh</span><span class="topbar-separator">/</span><strong>{{ current_user.company.name }}</strong>
       </div>
       <div class="topbar-account">
+        <button class="theme-toggle" id="themeToggle" type="button" role="switch" aria-checked="false" aria-label="Switch to dark theme" title="Switch to dark theme">
+          <span class="theme-toggle-track" aria-hidden="true"><span class="theme-toggle-thumb"></span></span>
+          <span class="theme-toggle-label">Light</span>
+        </button>
         <div class="topbar-user-copy"><strong>{{ current_user.full_name }}</strong><small>{{ current_user.role.value | title }}</small></div>
         <span class="user-avatar topbar-avatar" aria-hidden="true">{{ current_user.full_name[:1] | upper }}</span>
       </div>
@@ -110,6 +118,10 @@
 </div>
 {% else %}
 <div class="sesh-auth-layout">
+  <button class="theme-toggle auth-theme-toggle" id="themeToggle" type="button" role="switch" aria-checked="false" aria-label="Switch to dark theme" title="Switch to dark theme">
+    <span class="theme-toggle-track" aria-hidden="true"><span class="theme-toggle-thumb"></span></span>
+    <span class="theme-toggle-label">Light</span>
+  </button>
   <a class="sesh-brand auth-brand" href="{{ url_for('auth.login') }}">
     <span class="brand-mark"><img src="{{ url_for('static', filename='images/seshat-logo.webp') }}" alt="Seshat mark"></span>
     <span class="brand-copy"><strong>Sesh</strong><small>OFFICE WORKSPACE</small></span>
@@ -121,7 +133,6 @@
 </div>
 {% endif %}
 <script src="{{ url_for('static', filename='vendor/bootstrap/bootstrap.bundle.min.js') }}"></script>
-<script src="{{ url_for('static', filename='app.js') }}"></script>
 {% block scripts %}{% endblock %}
 </body>
 </html>
