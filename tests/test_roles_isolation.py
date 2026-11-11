@@ -8,7 +8,7 @@ ADMIN_PAGES = ["/admin/workers", "/admin/company", "/admin/office", "/admin/audi
 
 
 def test_anonymous_redirected_from_everything(client, acme):
-    for url in ["/"] + ADMIN_PAGES:
+    for url in ADMIN_PAGES:
         r = client.get(url)
         assert r.status_code == 302 and "/login" in r.headers["Location"]
 

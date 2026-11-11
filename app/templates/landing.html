@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#eaf2f8">
+  <meta name="description" content="Upload a document from anywhere, check the preview and print it on your office printer. Word, Excel, PDF and image files.">
+  <title>Sesh · Print to your office printer from anywhere</title>
+  <script src="{{ url_for('static', filename='app.js') }}"></script>
+  <link href="{{ url_for('static', filename='app.css') }}" rel="stylesheet">
+  <link href="{{ url_for('static', filename='landing.css') }}" rel="stylesheet">
+</head>
+<body class="landing-page">
+<a class="lp-skip" href="#main">Skip to content</a>
+
+<header class="lp-header">
+  <div class="lp-wrap lp-header-in">
+    <a class="lp-brand" href="{{ url_for('dashboard.index') }}" aria-label="Sesh home">
+      <img src="{{ url_for('static', filename='images/seshat-logo.webp') }}" alt="" width="36" height="36">
+      <span>Sesh</span>
+    </a>
+    <nav class="lp-nav" aria-label="Page sections">
+      <a href="#how">How it works</a>
+      <a href="#before">Before you start</a>
+    </nav>
+    <div class="lp-actions">
+      <button class="theme-toggle" id="themeToggle" type="button" role="switch" aria-checked="false" aria-label="Switch to dark theme" title="Switch to dark theme">
+        <span class="theme-toggle-track" aria-hidden="true"><span class="theme-toggle-thumb"></span></span>
+        <span class="theme-toggle-label">Light</span>
+      </button>
+      {% if setup_open %}
+      <a class="lp-link" href="{{ url_for('auth.login') }}">Sign in</a>
+      <a class="lp-btn lp-btn-primary lp-btn-sm" href="{{ url_for('auth.signup') }}">Sign up</a>
+      {% else %}
+      <a class="lp-btn lp-btn-primary lp-btn-sm" href="{{ url_for('auth.login') }}">Sign in</a>
+      {% endif %}
+    </div>
+  </div>
+</header>
+
+<main id="main">
+  <section class="lp-hero">
+    <div class="lp-wrap lp-hero-grid">
+      <div class="lp-hero-copy">
+        <h1>Print to your office printer from anywhere</h1>
+        <p class="lp-lead">Upload a Word, Excel, PDF or image file, check the preview, and send it to the printer at your office. No VPN, and no emailing files to a colleague.</p>
+        <div class="lp-hero-actions">
+          {% if setup_open %}
+          <a class="lp-btn lp-btn-primary" href="{{ url_for('auth.signup') }}">Sign up</a>
+          <a class="lp-btn lp-btn-ghost" href="{{ url_for('auth.login') }}">Sign in</a>
+          {% else %}
+          <a class="lp-btn lp-btn-primary" href="{{ url_for('auth.login') }}">Sign in</a>
+          <a class="lp-btn lp-btn-ghost" href="#how">See how it works</a>
+          {% endif %}
+        </div>
+        {% if not setup_open %}
+        <p class="lp-fine">New here? Accounts are created by your company administrator.</p>
+        {% endif %}
+      </div>
+
+      <div class="lp-job" aria-label="Example of a print job's progress">
+        <div class="lp-job-head">
+          <span class="lp-job-name">Quarterly report.docx</span>
+          <span class="lp-job-tag">Example job</span>
+        </div>
+        <ol class="lp-tl">
+          <li><span class="lp-dot" aria-hidden="true"></span><div><strong>Uploaded</strong><span class="lp-note">From any browser, on any connection</span></div></li>
+          <li><span class="lp-dot" aria-hidden="true"></span><div><strong>Converted to PDF</strong><span class="lp-note">Preview it before you print</span></div></li>
+          <li><span class="lp-dot" aria-hidden="true"></span><div><strong>Waiting</strong><span class="lp-note">For the office computer to pick it up</span></div></li>
+          <li><span class="lp-dot" aria-hidden="true"></span><div><strong>Picked up</strong><span class="lp-note">The PDF is fetched and its checksum verified</span></div></li>
+          <li><span class="lp-dot" aria-hidden="true"></span><div><strong>Sent to printer</strong><span class="lp-note">Windows accepted the job. Check the printer for paper.</span></div></li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <section class="lp-section" id="how" aria-labelledby="how-heading">
+    <div class="lp-wrap">
+      <h2 id="how-heading">How it works</h2>
+      <div class="lp-steps">
+        <div class="lp-step">
+          <span class="lp-num">1</span>
+          <h3>Upload your file</h3>
+          <p>Drop in a .docx, .xlsx, .pdf, .jpg, .jpeg or .png file from any browser, including your phone.</p>
+        </div>
+        <div class="lp-step">
+          <span class="lp-num">2</span>
+          <h3>Check the preview</h3>
+          <p>Sesh converts it to PDF in the cloud. The preview is the exact PDF that will be printed.</p>
+        </div>
+        <div class="lp-step">
+          <span class="lp-num">3</span>
+          <h3>Send it to the office printer</h3>
+          <p>Choose copies, paper size and colour. The office computer picks the job up and hands it to Windows.</p>
+        </div>
+      </div>
+      <ul class="lp-formats" aria-label="Supported file types">
+        <li>Word <b>.docx</b></li>
+        <li>Excel <b>.xlsx</b></li>
+        <li>PDF <b>.pdf</b></li>
+        <li>Images <b>.jpg .jpeg .png</b></li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="lp-section lp-section-alt" aria-labelledby="trust-heading">
+    <div class="lp-wrap lp-split">
+      <h2 id="trust-heading">Your files stay private, and the status stays honest</h2>
+      <div class="lp-points">
+        <div>
+          <h3>Private storage</h3>
+          <p>Documents are stored privately and shown only to signed-in people who are allowed to see them. There are no public links.</p>
+        </div>
+        <div>
+          <h3>Administrators and workers</h3>
+          <p>Administrators add workers, see all print activity and manage the office computer. Workers see their own documents and jobs.</p>
+        </div>
+        <div>
+          <h3>Status you can rely on</h3>
+          <p>&ldquo;Sent to printer&rdquo; means Windows accepted the job, not that paper came out. If the outcome is uncertain, Sesh flags it for an administrator instead of printing again.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="lp-section" id="before" aria-labelledby="before-heading">
+    <div class="lp-wrap lp-split">
+      <h2 id="before-heading">Before you start</h2>
+      <ul class="lp-notes">
+        <li>You need a Windows 10 or 11 computer at the office, connected to the printer, switched on and signed in. Sesh Agent runs on it and only makes outbound connections.</li>
+        <li>The printer must already be installed in Windows. Sesh uses the existing driver and never installs one.</li>
+        <li>Word and Excel files are converted by Sesh, not by Microsoft Office, so page breaks and layout can differ. Always check the preview.</li>
+        <li>Old .doc and .xls files, and password-protected files, are not supported.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="lp-cta" aria-labelledby="cta-heading">
+    <div class="lp-wrap lp-cta-in">
+      {% if setup_open %}
+      <div>
+        <h2 id="cta-heading">Create your Sesh account</h2>
+        <p>Sign up to create your company workspace and its first administrator. Registration closes once a company exists.</p>
+      </div>
+      <div class="lp-cta-actions">
+        <a class="lp-btn lp-btn-primary" href="{{ url_for('auth.signup') }}">Sign up</a>
+        <a class="lp-btn lp-btn-ghost" href="{{ url_for('auth.login') }}">Sign in</a>
+      </div>
+      {% else %}
+      <div>
+        <h2 id="cta-heading">Already have an account?</h2>
+        <p>Sign in to upload and print. If you don&rsquo;t have an account yet, ask your company administrator to add you.</p>
+      </div>
+      <div class="lp-cta-actions">
+        <a class="lp-btn lp-btn-primary" href="{{ url_for('auth.login') }}">Sign in</a>
+      </div>
+      {% endif %}
+    </div>
+  </section>
+</main>
+
+<footer class="lp-footer">
+  <div class="lp-wrap">Sesh &middot; Secure document conversion and print management</div>
+</footer>
+</body>
+</html>

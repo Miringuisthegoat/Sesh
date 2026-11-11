@@ -36,7 +36,7 @@ def login():
     if current_user.is_authenticated:
         return redirect(url_for("dashboard.index"))
     if not company_exists():
-        return redirect(url_for("auth.setup"))
+        return redirect(url_for("auth.signup"))
     form = LoginForm()
     if form.validate_on_submit():
         email = form.email.data.strip().lower()
@@ -67,10 +67,11 @@ def logout():
     return redirect(url_for("auth.login"))
 
 
-@bp.route("/setup", methods=["GET", "POST"])
+@bp.route("/setup", methods=["GET", "POST"], endpoint="setup")
+@bp.route("/signup", methods=["GET", "POST"], endpoint="signup")
 @limiter.limit(_login_limit, methods=["POST"])
 def setup():
-    """First-run only: creates the company and its first administrator. Disappears (404) once a company exists."""
+    """First-run signup: creates the company and its first administrator."""
     if company_exists():
         abort(404)
     form = SetupForm()

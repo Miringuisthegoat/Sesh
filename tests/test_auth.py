@@ -7,17 +7,23 @@ from config import TestingConfig
 from tests.conftest import PW, login
 
 
-def test_setup_creates_company_and_admin_then_disappears(client):
-    r = client.post("/setup", data={"company_name": "Acme", "full_name": "Ann", "email": "ann@acme-corp.com",
+def test_signup_creates_company_and_admin_then_disappears(client):
+    r = client.post("/signup", data={"company_name": "Acme", "full_name": "Ann", "email": "ann@acme-corp.com",
                                     "password": PW, "confirm": PW})
     assert r.status_code == 302
     assert db.session.scalar(select(Company).where(Company.name == "Acme")) is not None
     assert db.session.scalar(select(User).where(User.email == "ann@acme-corp.com")).is_admin
+    assert client.get("/signup").status_code == 404
     assert client.get("/setup").status_code == 404
 
 
 def test_login_redirects_to_setup_when_no_company(client):
-    assert client.get("/login").headers["Location"].endswith("/setup")
+    assert client.get("/login").headers["Location"].endswith("/signup")
+
+
+def test_setup_remains_an_alias_for_first_run_signup(client):
+    response = client.get("/setup")
+    assert response.status_code == 200 and b"Create your Sesh account" in response.data
 
 
 def test_password_is_hashed_not_plaintext(acme):
@@ -37,7 +43,7 @@ def test_login_failure_is_generic(client, acme):
     r2 = client.post("/login", data={"email": "ghost@acme-corp.com", "password": "nope-nope-nope"})
     assert r1.status_code == r2.status_code == 200
     assert b"Invalid email or password." in r1.data and b"Invalid email or password." in r2.data
-    assert client.get("/", follow_redirects=False).status_code == 302
+    assert b"Welcome back" not in client.get("/").data
 
 
 def test_inactive_user_cannot_login_and_is_cut_off_immediately(client, acme):
@@ -46,7 +52,7 @@ def test_inactive_user_cannot_login_and_is_cut_off_immediately(client, acme):
     assert client.get("/").status_code == 200
     worker.is_active = False
     db.session.commit()
-    assert client.get("/", follow_redirects=False).status_code == 302  # session no longer valid
+    assert b"Welcome back" not in client.get("/").data  # session no longer valid
     r = client.post("/login", data={"email": "worker@acme-corp.com", "password": PW})
     assert r.status_code == 200
 
@@ -62,7 +68,7 @@ def test_logout_requires_post(client, acme):
     login(client, "admin@acme-corp.com")
     assert client.get("/logout").status_code == 405
     assert client.post("/logout").status_code == 302
-    assert client.get("/", follow_redirects=False).status_code == 302
+    assert b"Welcome back" not in client.get("/").data
 
 
 def test_csrf_enforced_when_enabled():

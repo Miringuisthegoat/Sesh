@@ -14,13 +14,15 @@ from ..models import PrintJob, PrintJobStatus
 from ..printing.labels import JOB_LABELS
 from ..services.print_jobs import PENDING, visible_print_jobs
 from ..services.offices import get_company_office
+from ..services.users import company_exists
 
 bp = Blueprint("dashboard", __name__)
 
 
 @bp.get("/")
-@login_required
 def index():
+    if not current_user.is_authenticated:  # signed-out visitors get the public landing page
+        return render_template("landing.html", setup_open=not company_exists())
     office = get_company_office(current_user.company_id)
     agent = printer = None
     if office:
