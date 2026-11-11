@@ -20,3 +20,8 @@ class ChangePasswordForm(FlaskForm):
     current = PasswordField("Current password", validators=[DataRequired(), Length(max=128)])
     password = PasswordField("New password", validators=[DataRequired(), Length(max=128)])
     confirm = PasswordField("Confirm new password", validators=[DataRequired(), EqualTo("password", "Passwords do not match.")])
+
+
+class AcceptInviteForm(FlaskForm):
+    password = PasswordField("Choose a password", validators=[DataRequired(), Length(max=128)])
+    confirm = PasswordField("Confirm password", validators=[DataRequired(), EqualTo("password", "Passwords do not match.")])

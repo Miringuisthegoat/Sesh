@@ -14,19 +14,14 @@ def actions():
     return [a.action for a in db.session.scalars(select(AuditLog).order_by(AuditLog.id))]
 
 
-def test_create_worker_and_duplicate_email_rejected(client, acme):
+def test_invite_worker_and_duplicate_email_rejected(client, acme):
     login(client, "admin@acme-corp.com")
-    data = {"full_name": "New Person", "email": "new@acme-corp.com", "password": "long-enough-pw"}
-    assert client.post("/admin/workers", data=data).status_code == 302
-    r = client.post("/admin/workers", data=data)
+    r = client.post("/admin/workers", data={"full_name": "New Person", "email": "new@acme-corp.com"})
+    assert r.status_code == 200 and b"/invite/si_" in r.data
+    assert "invite.created" in actions()
+    r = client.post("/admin/workers", data={"full_name": "Dup", "email": "worker@acme-corp.com"})
     assert b"already exists" in r.data
-    assert "user.created" in actions()
 
-
-def test_weak_password_rejected(client, acme):
-    login(client, "admin@acme-corp.com")
-    r = client.post("/admin/workers", data={"full_name": "A", "email": "weak@acme-corp.com", "password": "short"})
-    assert b"at least 10" in r.data
 
 
 def test_deactivate_and_reactivate_worker(client, acme):

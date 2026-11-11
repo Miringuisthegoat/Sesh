@@ -3,6 +3,12 @@
 {% block title %}Workers{% endblock %}
 {% block content %}
 <h1 class="h3 mb-3">Workers</h1>
+{% if new_link %}
+<div class="alert alert-warning">
+  <strong>Manual invite link for {{ invited_name }}.</strong> It works one time and expires in {{ invite_hours }} hours.
+  <div class="mt-2"><code class="user-select-all text-break">{{ new_link }}</code></div>
+</div>
+{% endif %}
 <div class="row g-4">
   <div class="col-lg-7">
     <div class="card"><div class="table-responsive"><table class="table align-middle mb-0">
@@ -29,14 +35,30 @@
   </div>
   <div class="col-lg-5">
     <div class="card"><div class="card-body">
-      <h2 class="h5">Add a worker</h2>
+      <h2 class="h5">Invite a worker</h2>
       <form method="post" novalidate>
         {{ form.hidden_tag() }}
         {{ field(form.full_name) }}
-        {{ field(form.email) }}
-        {{ field(form.password, "At least 10 characters. Share it securely.") }}
-        <button class="btn btn-primary">Create worker</button>
+        {{ field(form.email, "Used to sign in. The worker chooses their own password.") }}
+        <button class="btn btn-primary">Create invite link</button>
       </form>
+    </div></div>
+    <div class="card mt-3"><div class="card-body">
+      <h2 class="h5">Pending invites</h2>
+      {% for i in invites %}
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <div>
+          <div>{{ i.full_name }}</div>
+          <div class="small text-muted">{{ i.email }} · expires {{ i.expires_at.strftime('%Y-%m-%d %H:%M') }} UTC</div>
+        </div>
+        <form method="post" action="{{ url_for('admin.invite_revoke', public_id=i.public_id) }}" data-confirm="Revoke this invite? The link will stop working.">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button class="btn btn-sm btn-outline-danger">Revoke</button>
+        </form>
+      </div>
+      {% else %}
+      <p class="text-muted small mb-0">No pending invites. The link is shown only once, so create a new invite if it was lost.</p>
+      {% endfor %}
     </div></div>
   </div>
 </div>

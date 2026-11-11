@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% from "_macros.html" import field %}
+{% block title %}Accept invite{% endblock %}
+{% block content %}
+<div class="narrow mx-auto card shadow-sm"><div class="card-body p-4">
+  <h1 class="h4">Welcome, {{ invite.full_name }}</h1>
+  <p class="text-muted small">You were invited to join {{ invite.company.name }} on Sesh as <strong>{{ invite.email }}</strong>. Choose your own password to finish.</p>
+  <form method="post" novalidate>
+    {{ form.hidden_tag() }}
+    {{ field(form.password, "At least 10 characters.") }}
+    {{ field(form.confirm) }}
+    <button class="btn btn-primary w-100">Create my account</button>
+  </form>
+</div></div>
+{% endblock %}

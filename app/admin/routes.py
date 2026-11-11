@@ -10,32 +10,73 @@ from ..models import Agent, AgentStatus, AuditLog, Company, Printer, User
 from ..services.agents import create_enrollment, revoke_agent
 from ..services.audit import audit
 from ..services.errors import ServiceError
+from ..services.mailer import EmailDeliveryError, send_invite_email
 from ..services.offices import create_office, get_company_office, update_office
-from ..services.tenant import get_company_user_or_404
-from ..services.users import create_user, reset_password, set_user_active
-from ..models import UserRole
-from .forms import CompanySettingsForm, OfficeForm, PasswordResetForm, WorkerForm
+
+from ..services.invites import create_invite, pending_invites, revoke_invite
+from ..services.tenant import get_company_invite_or_404, get_company_user_or_404
+from ..services.users import reset_password, set_user_active
+from .forms import CompanySettingsForm, InviteForm, OfficeForm, PasswordResetForm
+
 
 bp = Blueprint("admin", __name__, url_prefix="/admin")
+
+
+def _workers_page(form, new_link=None, invited_name=None):
+    users = db.session.scalars(select(User).where(User.company_id == current_user.company_id)
+                               .order_by(User.role, User.full_name)).all()
+    return render_template("admin/workers.html", form=form, users=users, invites=pending_invites(current_user.company_id),
+                           new_link=new_link, invited_name=invited_name, invite_hours=current_app.config["INVITE_HOURS"])
 
 
 @bp.route("/workers", methods=["GET", "POST"])
 @admin_required
 def workers():
-    form = WorkerForm()
+    form = InviteForm()
     if form.validate_on_submit():
         try:
-            create_user(current_user.company, email=form.email.data, full_name=form.full_name.data,
-                        password=form.password.data, role=UserRole.WORKER, actor=current_user)
+            invite, token = create_invite(current_user.company, full_name=form.full_name.data, email=form.email.data,
+                                          actor=current_user)
             db.session.commit()
-            flash("Worker account created. Share the temporary password securely and ask them to keep it private.", "success")
-            return redirect(url_for("admin.workers"))
         except ServiceError as e:
             db.session.rollback()
             flash(str(e), "danger")
-    users = db.session.scalars(select(User).where(User.company_id == current_user.company_id)
-                               .order_by(User.role, User.full_name)).all()
-    return render_template("admin/workers.html", form=form, users=users)
+        else:  # rendered directly, never redirected: the link is shown once
+            invite_url = url_for("auth.accept_invite", token=token, _external=True)
+            email_sent = False
+            try:
+                email_sent = send_invite_email(
+                    to_email=invite.email,
+                    full_name=invite.full_name,
+                    company_name=current_user.company.name,
+                    invite_url=invite_url,
+                    expires_hours=current_app.config["INVITE_HOURS"],
+                )
+            except EmailDeliveryError:
+                current_app.logger.exception("Invite email delivery failed")
+                flash("The invite was created, but email delivery failed. Copy the link below and send it manually.",
+                      "warning")
+            else:
+                if email_sent:
+                    flash(f"Invite email sent to {invite.email}.", "success")
+                else:
+                    flash("Email is not configured. Copy the link below and send it manually.", "warning")
+            return _workers_page(InviteForm(formdata=None), None if email_sent else invite_url, invite.full_name)
+    return _workers_page(form)
+
+
+@bp.post("/invites/<uuid:public_id>/revoke")
+@admin_required
+def invite_revoke(public_id: uuid.UUID):
+    invite = get_company_invite_or_404(public_id)
+    try:
+        revoke_invite(invite, current_user)
+        db.session.commit()
+        flash("Invite revoked.", "success")
+    except ServiceError as e:
+        db.session.rollback()
+        flash(str(e), "danger")
+    return redirect(url_for("admin.workers"))
 
 
 @bp.post("/workers/<uuid:public_id>/active")

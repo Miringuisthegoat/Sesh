@@ -13,6 +13,9 @@ from ..services.errors import ServiceError
 from ..services.users import change_own_password, company_exists, create_company_with_admin
 from .forms import ChangePasswordForm, LoginForm, SetupForm
 
+from ..services import invites as invite_service
+from .forms import AcceptInviteForm, ChangePasswordForm, LoginForm, SetupForm
+
 bp = Blueprint("auth", __name__)
 _DUMMY_HASH = generate_password_hash("not-a-real-password")  # equalises timing for unknown emails
 
@@ -103,3 +106,24 @@ def change_password():
             db.session.rollback()
             flash(str(e), "danger")
     return render_template("auth/password.html", form=form)
+
+@bp.route("/invite/<token>", methods=["GET", "POST"])
+@limiter.limit(_login_limit, methods=["POST"])
+def accept_invite(token):
+    if current_user.is_authenticated:
+        return redirect(url_for("dashboard.index"))
+    invite = invite_service.get_valid_invite(token)
+    if invite is None:
+        return render_template("error.html", code=404, message=invite_service.INVALID), 404
+    form = AcceptInviteForm()
+    if form.validate_on_submit():
+        try:
+            invite_service.accept_invite(token, form.password.data)
+            db.session.commit()
+        except ServiceError as e:
+            db.session.rollback()
+            flash(str(e), "danger")
+        else:
+            flash("Your account is ready. Sign in with your email and the password you just chose.", "success")
+            return redirect(url_for("auth.login"))
+    return render_template("auth/invite.html", form=form, invite=invite)

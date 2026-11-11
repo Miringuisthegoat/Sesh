@@ -5,12 +5,11 @@ from wtforms.validators import DataRequired, Length, NumberRange, Optional
 from ..models import PAPER_SIZES
 
 
-class WorkerForm(FlaskForm):
+class InviteForm(FlaskForm):
     full_name = StringField("Full name", validators=[DataRequired(), Length(max=150)])
     email = StringField("Email", validators=[DataRequired(), Length(max=254)])
-    password = PasswordField("Temporary password", validators=[DataRequired(), Length(max=128)])
 
-
+    
 class PasswordResetForm(FlaskForm):
     password = PasswordField("New password", validators=[DataRequired(), Length(max=128)])
 

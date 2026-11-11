@@ -18,6 +18,9 @@ python -m pytest -q                # run the tests
 ```
 Debug mode (auto-reload, dev only): `$env:FLASK_DEBUG="1"; python -m flask run`
 
+## Worker invite email
+For a quick setup, use Gmail SMTP: enable 2-Step Verification on the Google account, create an App Password in Google Account security settings, and copy the Gmail settings from `.env.example` into `.env`. Use the App Password for `MAIL_PASSWORD`, not your regular Google password. Resend SMTP settings are also included as an alternative; verify a sending domain and create an SMTP API key before using that block. Configure only one provider at a time and restart Flask after editing `.env`. When mail is not configured or delivery fails, the admin page keeps showing the one-time invite link for manual delivery.
+
 ## Documents and conversion
 Upload -> stored privately (`storage/` locally, R2 in production) -> queued -> `flask run-worker` converts -> PDF stored privately. Files are only served through logged-in, company-scoped routes. If a document stays "Waiting to convert", the worker is not running.
 R2: create a PRIVATE bucket and an API token limited to it, then set `STORAGE_BACKEND=r2` and the four `R2_*` values in `.env`. Optional storage tests against a mock S3: `pip install -r requirements-dev.txt`.

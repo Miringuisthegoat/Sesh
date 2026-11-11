@@ -14,6 +14,10 @@ def _int(name: str, default: int) -> int:
     return int(os.environ.get(name, default))
 
 
+def _bool(name: str, default: bool) -> bool:
+    return os.environ.get(name, str(default)).strip().lower() in {"1", "true", "yes", "on"}
+
+
 def _database_url() -> str:
     url = os.environ.get("DATABASE_URL", "").strip()
     if not url:
@@ -62,6 +66,15 @@ class Config:
     AGENT_HEARTBEAT_SECONDS = _int("AGENT_HEARTBEAT_SECONDS", 30)
     AGENT_OFFLINE_AFTER_SECONDS = _int("AGENT_OFFLINE_AFTER_SECONDS", 90)
     AGENT_ENROLLMENT_HOURS = _int("AGENT_ENROLLMENT_HOURS", 24)
+    INVITE_HOURS = _int("INVITE_HOURS", 48)
+    MAIL_SERVER = os.environ.get("MAIL_SERVER", "")
+    MAIL_PORT = _int("MAIL_PORT", 587)
+    MAIL_USE_TLS = _bool("MAIL_USE_TLS", True)
+    MAIL_USE_SSL = _bool("MAIL_USE_SSL", False)
+    MAIL_USERNAME = os.environ.get("MAIL_USERNAME", "")
+    MAIL_PASSWORD = os.environ.get("MAIL_PASSWORD", "")
+    MAIL_DEFAULT_SENDER = os.environ.get("MAIL_DEFAULT_SENDER", "")
+    MAIL_TIMEOUT = _int("MAIL_TIMEOUT", 10)
     AGENT_INSTALLER_PATH = os.environ.get("AGENT_INSTALLER_PATH", "dist/installer/SeshAgentSetup.exe")
     AGENT_REGISTER_RATE_LIMIT = os.environ.get("AGENT_REGISTER_RATE_LIMIT", "10 per minute")
     JOB_LEASE_SECONDS = _int("JOB_LEASE_SECONDS", 120)
@@ -97,3 +110,5 @@ class TestingConfig(Config):
     RATELIMIT_ENABLED = False
     SESSION_COOKIE_SECURE = False
     REMEMBER_COOKIE_SECURE = False
+    MAIL_SERVER = ""
+    MAIL_DEFAULT_SENDER = ""

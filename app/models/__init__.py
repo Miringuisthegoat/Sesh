@@ -6,8 +6,11 @@ from .office import Office
 from .print_job import PrintJob, PrintJobStatus
 from .printer import Printer, PrinterAvailability
 from .user import User, UserRole
+from .document import ConversionStatus, ConvertedFile, Document, DocumentStatus
+from .invite import Invite
 
 __all__ = [
     "Agent", "AgentEvent", "AgentStatus", "AuditLog", "Company", "PAPER_SIZES", "ConversionStatus", "ConvertedFile",
     "Document", "DocumentStatus", "Office", "PrintJob", "PrintJobStatus", "Printer", "PrinterAvailability", "User", "UserRole",
+    "Invite",
 ]
